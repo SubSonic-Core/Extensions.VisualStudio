@@ -63,28 +63,17 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.TemplateWizardInterface, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="System" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="16.0.205" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="16.6.2058" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SubSonic.Core.TemplateWizard\SubSonic.Core.TemplateWizard.csproj">
-      <Project>{9BAF9554-BBFE-4B0C-8002-C5333CB69C1E}</Project>
+    <ProjectReference Include="SubSonic.Core.TemplateWizard\SubSonic.Core.TemplateWizard.csproj">
+      <Project>{9baf9554-bbfe-4b0c-8002-c5333cb69c1e}</Project>
       <Name>SubSonic.Core.TemplateWizard</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
-    <ProjectReference Include="..\SubSonic.Core.Template\SubSonic.Core.Template.csproj">
-      <Project>{432D4CE0-CBD6-4E61-81F5-0D995A5CF06F}</Project>
+    <ProjectReference Include="SubSonic.Core.Template\SubSonic.Core.Template.csproj">
+      <Project>{432d4ce0-cbd6-4e61-81f5-0d995a5cf06f}</Project>
       <Name>SubSonic.Core.Template</Name>
-      <VSIXSubPath>ItemTemplates</VSIXSubPath>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
