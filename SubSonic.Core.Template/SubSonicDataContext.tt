@@ -1,4 +1,9 @@
-﻿<#@ template language="C#" #>
+﻿<#@ template hostspecific="true" language="C#" #>
+<#@ include file="SqlServer.ttinclude" #>
+<#
+	Settings.Host = Host;
+#>
+
 using Microsoft.Extensions.DependencyInjection;
 using SubSonic;
 using System;
@@ -14,6 +19,8 @@ namespace $rootnamespace$
 		{
 			this.services = services ?? throw new ArgumentNullException(nameof(services));
 		}
+
+		public string ConnectionString => "<#= Settings.Connection.DisplayConnectionString #>";
 
 		#region ISubSonicSetCollection{TEntity} Collection Properties
 		#endregion

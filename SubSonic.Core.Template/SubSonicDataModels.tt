@@ -1,0 +1,7 @@
+﻿<#@ template language="C#" #>
+using System;
+
+namespace $rootnamespace$.Models
+{
+
+}
