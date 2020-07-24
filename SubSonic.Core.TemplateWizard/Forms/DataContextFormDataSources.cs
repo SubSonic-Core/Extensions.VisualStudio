@@ -16,7 +16,7 @@ namespace SubSonic.Core.VisualStudio.Forms
         {
             get
             {
-                if (connectionManager != null)
+                if (connectionManager != null && connectionManager.Connections != null)
                 {
                     return connectionManager.Connections.Keys.ToList();
                 }

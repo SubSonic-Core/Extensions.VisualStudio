@@ -1,4 +1,6 @@
-﻿using SubSonic.Core.VisualStudio.Attributes;
+﻿using Microsoft.VisualStudio.Shell;
+using SubSonic.Core.VisualStudio;
+using SubSonic.Core.VisualStudio.Attributes;
 using SubSonic.Core.VisualStudio.CustomTools;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -22,6 +24,9 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 [assembly: ProvideAssemblyObject(typeof(SubSonicTemplatingFileGenerator))]
+[assembly: ProvideAssemblyObject(typeof(ISubSonicCoreService), RegistrationMethod = RegistrationMethod.Assembly)]
+[assembly: ProvideAssemblyObject(typeof(IDataConnection), RegistrationMethod = RegistrationMethod.Assembly)]
+[assembly: ProvideAssemblyObject(typeof(IConnectionManager), RegistrationMethod = RegistrationMethod.Assembly)]
 
 // Version information for an assembly consists of the following four values:
 //

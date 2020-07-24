@@ -26,23 +26,29 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            Hierarchy = hierarchy;
-            Callback = callback;
-            InputFile = inputFile;
+            string result = "";
 
-            Host.SetFileExtension(SearchForLanguage(content, "C#") ? ".cs" : ".vb");
-
-            string result = Engine.ProcessTemplate(content, Host);
-
-            // TextTemplatingService does some extra stuff here which I can not call at this time.
-
-            if (SearchForLanguage(content, "C#"))
+            if (this is ITextTemplatingComponents SubSonicComponents)
             {
-                SqmFacade.T4PreprocessTemplateCS();
-            }
-            else if (SearchForLanguage(content, "VB"))
-            {
-                SqmFacade.T4PreprocessTemplateVB();
+                SubSonicComponents.Hierarchy = hierarchy;
+                SubSonicComponents.Callback = callback;
+                SubSonicComponents.InputFile = inputFile;
+
+                SubSonicComponents.Host.SetFileExtension(SearchForLanguage(content, "C#") ? ".cs" : ".vb");
+
+                result = SubSonicComponents.Engine.ProcessTemplate(content, SubSonicComponents.Host);
+
+                // TextTemplatingService which is private and can not be replicated with out implementing from scratch.
+
+                // SqmFacade is a DTE wrapper that can send additional commands to VS
+                if (SearchForLanguage(content, "C#"))
+                {
+                    SqmFacade.T4PreprocessTemplateCS();
+                }
+                else if (SearchForLanguage(content, "VB"))
+                {
+                    SqmFacade.T4PreprocessTemplateVB();
+                }
             }
 
             return result;

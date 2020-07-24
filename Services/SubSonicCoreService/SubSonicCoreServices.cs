@@ -62,7 +62,14 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 if (GetService(typeof(IVsDataExplorerConnectionManager)) is IVsDataExplorerConnectionManager connectionManager)
                 {
-                    return new VsDataExplorerConnectionWrapper(connectionManager);
+                    SubSonicConnectionManager manager = new SubSonicConnectionManager();
+
+                    foreach(var key in connectionManager.Connections.Keys)
+                    {
+                        manager.Add(key, new SubSonicDataConnection(connectionManager.Connections[key].Connection));
+                    }
+
+                    return manager;
                 }
 
                 return null;
@@ -224,7 +231,14 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             if (templating is IDisposable disposable)
             {
-                disposable?.Dispose();
+                try
+                {
+                    disposable?.Dispose();
+                }
+                finally
+                {
+                    templating = null;
+                }
             }
         }
     }

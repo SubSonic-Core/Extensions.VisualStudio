@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
 
 namespace SubSonic.Core.VisualStudio
 {
+    [Guid("E4EC2E20-830A-47F6-B40B-F515EEBFCCD0")]
     public interface IDataConnection
     {
         string EncryptedConnectionString { get; }

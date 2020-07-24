@@ -10,6 +10,7 @@
         private RegistrationMethod _registrationMethod;
 
         public ProvideAssemblyObjectAttribute(Type objectType)
+            : base()
         {
             _objectType = objectType ?? throw new ArgumentNullException("objectType");
         }
@@ -43,6 +44,14 @@
             }
         }
 
+        private string CodeBase
+        {
+            get
+            {
+                return string.Format(@"$PackageFolder$\{0}.dll", ObjectType.Assembly.GetName().Name);
+            }
+        }
+
         public override void Register(RegistrationContext context)
         {
             using (Key key = context.CreateKey(ClsidRegKey))
@@ -61,7 +70,7 @@
                         break;
 
                     case Microsoft.VisualStudio.Shell.RegistrationMethod.CodeBase:
-                        key.SetValue("CodeBase", context.CodeBase);
+                        key.SetValue("CodeBase", CodeBase);
                         break;
 
                     default:
