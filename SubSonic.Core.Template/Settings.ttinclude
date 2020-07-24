@@ -55,7 +55,7 @@ public class Settings
 			{
 				if (service.GetService(typeof(ISubSonicCoreService)) is ISubSonicCoreService subsonic)
 				{
-					return subsonic.Hello;
+					return subsonic.ConnectionManager[connectionKey];
 				}
 				throw new InvalidOperationException("Unable to resolve ISubSonicCoreService!");
 			}

@@ -224,7 +224,7 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             if (templating is IDisposable disposable)
             {
-                disposable.Dispose();
+                disposable?.Dispose();
             }
         }
     }
