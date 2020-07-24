@@ -20,10 +20,10 @@ using Microsoft.VisualStudio.Data.Services;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
-    public partial class SubSonicCoreService
+    public partial class SubSonicTemplatingService
         : MarshalByRefObject
-        , SSubSonicCoreService
-        , ISubSonicCoreService
+        , SSubSonicTemplatingService
+        , ISubSonicTemplatingService
         , ITextTemplatingComponents
         , ITextTemplatingEngineHost
         , IServiceProvider
@@ -31,9 +31,9 @@ namespace SubSonic.Core.VisualStudio.Services
     {
         private readonly IAsyncServiceProvider serviceProvider;
         
-        public SubSonicCoreService(IAsyncServiceProvider serviceProvider)
+        public SubSonicTemplatingService(IAsyncServiceProvider serviceProvider)
         {
-            Trace.WriteLine($"Constructing a new instance of {nameof(SubSonicCoreService)}.");
+            Trace.WriteLine($"Constructing a new instance of {nameof(SubSonicTemplatingService)}.");
 
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
@@ -55,7 +55,7 @@ namespace SubSonic.Core.VisualStudio.Services
             return this;
         }
 
-        #region ISubSonicCoreService implemenation
+        #region ISubSonicTemplatingService implemenation
         public IConnectionManager ConnectionManager
         {
             get
@@ -78,6 +78,7 @@ namespace SubSonic.Core.VisualStudio.Services
         #endregion
 
         private ITextTemplating templating;
+        private bool disposedValue;
 
         public event EventHandler<DebugTemplateEventArgs> DebugCompleted
         {
@@ -202,7 +203,7 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             object result = null;
 
-            if (serviceType == typeof(ISubSonicCoreService))
+            if (serviceType == typeof(ISubSonicTemplatingService))
             {
                 return this;
             }
@@ -227,19 +228,43 @@ namespace SubSonic.Core.VisualStudio.Services
             return result;
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    if (templating is IDisposable disposable)
+                    {
+                        try
+                        {
+                            disposable?.Dispose();
+                        }
+                        finally
+                        {
+                            templating = null;
+                        }
+                    }
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~SubSonicTemplatingService()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
         public void Dispose()
         {
-            if (templating is IDisposable disposable)
-            {
-                try
-                {
-                    disposable?.Dispose();
-                }
-                finally
-                {
-                    templating = null;
-                }
-            }
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextTemplating;
 using Microsoft.VisualStudio.TextTemplating.VSHost;
+using SubSonic.Core.VisualStudio.CustomTools;
 using SubSonic.Core.VisualStudio.Services;
 using System;
 using System.ComponentModel.Design;
@@ -30,9 +31,16 @@ namespace SubSonic.Core.VisualStudio
     /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
     /// </para>
     /// </remarks>
-    [ProvideService((typeof(SSubSonicCoreService)), IsAsyncQueryable = true)]
+    
     [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
+    [ProvideService((typeof(SSubSonicTemplatingService)), IsAsyncQueryable = true)]
+    [ProvideCodeGenerator(typeof(SubSonicTemplatingFileGenerator), nameof(SubSonicTemplatingFileGenerator), "Generator that uses the Text Templating engine with vsix.", true, ProjectSystem = "{fae04ec1-301f-11d3-bf4b-00c04f79efbc}")]
+    [ProvideCodeGenerator(typeof(SubSonicTemplatingFileGenerator), nameof(SubSonicTemplatingFileGenerator), "Generator that uses the Text Templating engine with vsix.", true, ProjectSystem = "{164b10b9-b200-11d0-8c61-00a0c91e29d5}")]
+    [ProvideCodeGenerator(typeof(SubSonicTemplatingFileGenerator), nameof(SubSonicTemplatingFileGenerator), "Generator that uses the Text Templating engine with vsix.", true, ProjectSystem = "{39c9c826-8ef8-4079-8c95-428f5b1c323f}")]
+    [ProvideCodeGeneratorExtension(nameof(SubSonicTemplatingFileGenerator), ".stt", ProjectSystem = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}", ProjectSystemPackage = "{fae04ec1-301f-11d3-bf4b-00c04f79efbc}")]
+    [ProvideCodeGeneratorExtension(nameof(SubSonicTemplatingFileGenerator), ".stt", ProjectSystem = "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}", ProjectSystemPackage = "{164b10b9-b200-11d0-8c61-00a0c91e29d5}")]
+    [ProvideCodeGeneratorExtension(nameof(SubSonicTemplatingFileGenerator), ".stt", ProjectSystem = "{E24C65DC-7377-472b-9ABA-BC803B73C61A}", ProjectSystemPackage = "{39c9c826-8ef8-4079-8c95-428f5b1c323f}")]
     [Guid(PackageGuidString)]
     public sealed class SubSonicCoreVisualStudioAsyncPackage : AsyncPackage
     {
@@ -60,14 +68,14 @@ namespace SubSonic.Core.VisualStudio
 
             AsyncServiceCreatorCallback callback = new AsyncServiceCreatorCallback(CreateServiceAsync);
 
-            AddService(typeof(SSubSonicCoreService), CreateServiceAsync, true);
+            AddService(typeof(SSubSonicTemplatingService), CreateServiceAsync, true);
         }
         
         public async Task<object> CreateServiceAsync(IAsyncServiceContainer container, CancellationToken cancellationToken, Type serviceType)
         {
-            if (serviceType == typeof(SSubSonicCoreService))
+            if (serviceType == typeof(SSubSonicTemplatingService))
             {
-                return await new SubSonicCoreService(this).InitializeAsync(cancellationToken);
+                return await new SubSonicTemplatingService(this).InitializeAsync(cancellationToken);
             }
 
             return null;

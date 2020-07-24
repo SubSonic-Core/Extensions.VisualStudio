@@ -55,11 +55,11 @@
     <Compile Include="CustomTools\SubSonicTemplatingFileGenerator\TextTemplating.cs" />
     <Compile Include="Interfaces\SSubSonicCoreService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\SubSonicCoreService\SubSonicCoreServices.cs" />
-    <Compile Include="Services\SubSonicCoreService\TextTemplating.cs" />
-    <Compile Include="Services\SubSonicCoreService\TextTemplatingOrchestrator.cs" />
-    <Compile Include="Services\SubSonicCoreService\TextTemplatingSessionHost.cs" />
-    <Compile Include="SubSonic.Core.VisualStudioAsyncPackage.cs" />
+    <Compile Include="Services\SubSonicTemplatingService\SubSonicTemplatingService.cs" />
+    <Compile Include="Services\SubSonicTemplatingService\TextTemplating.cs" />
+    <Compile Include="Services\SubSonicTemplatingService\TextTemplatingOrchestrator.cs" />
+    <Compile Include="Services\SubSonicTemplatingService\TextTemplatingSessionHost.cs" />
+    <Compile Include="AsyncPackages\SubSonic.Core.VisualStudioAsyncPackage.cs" />
     <Compile Include="SubSonicCoreErrors.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -108,9 +108,14 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualStudio.Data.Services, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="SubSonicCoreErrors.resx">

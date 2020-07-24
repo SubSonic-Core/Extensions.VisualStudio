@@ -24,7 +24,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 [assembly: ProvideAssemblyObject(typeof(SubSonicTemplatingFileGenerator))]
-[assembly: ProvideAssemblyObject(typeof(ISubSonicCoreService), RegistrationMethod = RegistrationMethod.Assembly)]
+[assembly: ProvideAssemblyObject(typeof(ISubSonicTemplatingService), RegistrationMethod = RegistrationMethod.Assembly)]
 [assembly: ProvideAssemblyObject(typeof(IDataConnection), RegistrationMethod = RegistrationMethod.Assembly)]
 [assembly: ProvideAssemblyObject(typeof(IConnectionManager), RegistrationMethod = RegistrationMethod.Assembly)]
 

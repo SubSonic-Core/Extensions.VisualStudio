@@ -8,7 +8,7 @@
     <ProjectType>CSharp</ProjectType>
     <RequiredFrameworkVersion>2.0</RequiredFrameworkVersion>
     <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
-    <DefaultName>DataContext.tt</DefaultName>
+    <DefaultName>DataContext.stt</DefaultName>
   </TemplateData>
   <TemplateContent>
     <References>
@@ -16,8 +16,8 @@
         <Assembly>System</Assembly>
       </Reference>
     </References>
-    <ProjectItem ReplaceParameters="true">SubSonicDataContext.tt</ProjectItem>
-    <ProjectItem ReplaceParameters="true" TargetFileName="DataModels.tt">SubSonicDataModels.tt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" CustomTool="SubSonicTemplatingFileGenerator" >SubSonicDataContext.stt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" CustomTool="SubSonicTemplatingFileGenerator" TargetFileName="$fileinputname$Models.stt">SubSonicDataModels.stt</ProjectItem>
     <ProjectItem ReplaceParameters="true" TargetFileName="Settings.ttinclude">Settings.ttinclude</ProjectItem>
     <ProjectItem TargetFileName="SqlServer.ttinclude">SqlServer.ttinclude</ProjectItem>
   </TemplateContent>

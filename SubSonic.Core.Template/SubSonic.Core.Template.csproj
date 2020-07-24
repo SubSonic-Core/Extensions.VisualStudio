@@ -56,16 +56,6 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="SqlServer.ttinclude" />
-    <None Include="SubSonicDataModels.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>SubSonicDataModels.tt</DependentUpon>
-    </None>
-    <None Include="SubSonicDataContext.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>SubSonicDataContext.tt</DependentUpon>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="SubSonicDataContext.ico" />
@@ -78,19 +68,19 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Settings.ttinclude" />
-    <Content Include="SubSonicDataContext.tt">
-      <LastGenOutput>SubSonicDataContext.cs</LastGenOutput>
+    <None Include="SubSonicDataContext.stt">
+      <LastGenOutput>SubSonicDataContext1.cs</LastGenOutput>
       <Generator>TextTemplatingFileGenerator</Generator>
-    </Content>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="SubSonicDataModels.tt">
+    <None Include="SubSonicDataModels.stt">
       <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>SubSonicDataModels.cs</LastGenOutput>
-    </Content>
+      <LastGenOutput>SubSonicDataModels1.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />

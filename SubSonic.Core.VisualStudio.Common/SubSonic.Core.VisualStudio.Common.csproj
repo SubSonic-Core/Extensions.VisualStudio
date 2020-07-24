@@ -48,7 +48,7 @@
   <ItemGroup>
     <Compile Include="Interfaces\IConnectionManager.cs" />
     <Compile Include="Interfaces\IDataConnection.cs" />
-    <Compile Include="Interfaces\ISubSonicCoreService.cs" />
+    <Compile Include="Interfaces\ISubSonicTemplatingService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

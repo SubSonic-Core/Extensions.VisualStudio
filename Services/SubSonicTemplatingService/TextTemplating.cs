@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
-    public partial class SubSonicCoreService
+    public partial class SubSonicTemplatingService
         : IDebugTextTemplating
         , ITextTemplating
     {

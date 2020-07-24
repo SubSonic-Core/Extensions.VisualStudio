@@ -21,7 +21,6 @@
 public class Settings
 {
 	const string connectionKey = @"$connectionKey$";
-	readonly Guid connectionExplorerGuid = Guid.Parse("8B6159D9-A634-4549-9EAC-8642744F1042");
 
 	public static ITextTemplatingEngineHost Host { get; set; }
 
@@ -51,16 +50,37 @@ public class Settings
 	{
 		get
 		{
-			if (Host is IServiceProvider service)
+			if (GetService<ISubSonicTemplatingService>() is ISubSonicTemplatingService subsonic)
 			{
-				if (service.GetService(typeof(ISubSonicCoreService)) is ISubSonicCoreService subsonic)
-				{
-					return subsonic.ConnectionManager[connectionKey];
-				}
-				throw new InvalidOperationException("Unable to resolve ISubSonicCoreService!");
+				return subsonic.ConnectionManager[connectionKey];
 			}
-			throw new Exception("Host property returned unexpected value (null)");
+
+			throw new InvalidOperationException("Unable to resolve ISubSonicTemplatingService!");
 		}
+	}
+
+	public static EnvDTE.Project Project
+	{
+		get
+		{
+			if (GetService<EnvDTE.DTE>() is EnvDTE.DTE dte)
+			{
+				if (dte.ActiveSolutionProjects is Array activeSolutionProjects)
+				{
+					return activeSolutionProjects.GetValue(0) as EnvDTE.Project;
+				}
+			}
+			return default;
+		}
+	}
+
+	public static TService GetService<TService>()
+	{
+		if(((IServiceProvider)Host).GetService(typeof(TService)) is TService success)
+		{
+			return success;
+		}
+		return default;
 	}
 }
 #>
