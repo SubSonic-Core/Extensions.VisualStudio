@@ -8,6 +8,6 @@ namespace SubSonic.Core.VisualStudio
 {
     public interface ISubSonicCoreService
     {
-        string Hello { get; }
+        IConnectionManager ConnectionManager { get; }
     }
 }

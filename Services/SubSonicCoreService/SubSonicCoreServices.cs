@@ -16,6 +16,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextTemplating.VSHost;
 using SubSonic.Core.VisualStudio.Templating;
+using Microsoft.VisualStudio.Data.Services;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -55,7 +56,18 @@ namespace SubSonic.Core.VisualStudio.Services
         }
 
         #region ISubSonicCoreService implemenation
-        public string Hello => "hello";
+        public IConnectionManager ConnectionManager
+        {
+            get
+            {
+                if (GetService(typeof(IVsDataExplorerConnectionManager)) is IVsDataExplorerConnectionManager connectionManager)
+                {
+                    return new VsDataExplorerConnectionWrapper(connectionManager);
+                }
+
+                return null;
+            }
+        }
         #endregion
 
         private ITextTemplating templating;
