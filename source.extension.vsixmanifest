@@ -17,6 +17,7 @@
     <Assets>
         <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
         <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" d:ProjectName="SubSonic.Core.Template" d:TargetPath="|SubSonic.Core.Template;TemplateProjectOutputGroup|" Path="ItemTemplates" d:VsixSubPath="ItemTemplates" />
-        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="SubSonic.Core.TemplateWizard" Path="|SubSonic.Core.TemplateWizard|" AssemblyName="|SubSonic.Core.TemplateWizard;AssemblyName|" />
+        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" Path="|SubSonic.Core.VisualStudio.Wizards|" AssemblyName="|SubSonic.Core.VisualStudio.Wizards;AssemblyName|" d:ProjectName="%CurrentProject%.Wizards" />
+        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="%CurrentProject%.Common" Path="|SubSonic.Core.VisualStudio.Common|" AssemblyName="|SubSonic.Core.VisualStudio.Common;AssemblyName|" />
     </Assets>
 </PackageManifest>

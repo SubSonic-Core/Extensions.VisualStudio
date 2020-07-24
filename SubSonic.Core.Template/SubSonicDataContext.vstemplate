@@ -26,8 +26,8 @@
       <FullClassName>NuGet.VisualStudio.TemplateWizard</FullClassName>
   </WizardExtension>
   <WizardExtension>
-    <Assembly>SubSonic.Core.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=700cfb8f213967e7</Assembly>
-    <FullClassName>SubSonic.Core.Template.Wizards.DataContextWizard</FullClassName>
+    <Assembly>SubSonic.Core.VisualStudio.Wizards, Version=1.0.0.0, Culture=neutral, PublicKeyToken=700cfb8f213967e7</Assembly>
+    <FullClassName>SubSonic.Core.VisualStudio.Wizards.DataContextWizard</FullClassName>
   </WizardExtension>
   <WizardData>
     <packages repository="extension" repositoryId="SubSonic.Core.VisualStudio.d0e28cfc-1997-48b5-bff3-b1c24fc847ba">

@@ -20,7 +20,7 @@ namespace $rootnamespace$
 			this.services = services ?? throw new ArgumentNullException(nameof(services));
 		}
 
-		public string ConnectionString => "<#= Settings.Connection.DisplayConnectionString #>";
+		public string ConnectionString => "<#= Settings.Connection #>";
 
 		#region ISubSonicSetCollection{TEntity} Collection Properties
 		#endregion

@@ -1,9 +1,5 @@
-﻿<#@ template debug="true" language="C#" #>
+﻿<#@ template language="C#" #>
 <#@ assembly name="EnvDTE" #>
-<#@ assembly name="$(DevEnvDir)PublicAssemblies\Microsoft.VisualStudio.Data.Services.dll" #>
-<#@ assembly name="$(DevEnvDir)PublicAssemblies\Microsoft.VisualStudio.OLE.Interop.dll" #>
-<#@ assembly name="$(DevEnvDir)PublicAssemblies\Microsoft.VisualStudio.Shell.15.0.dll" #>
-<#@ assembly name="$(DevEnvDir)PublicAssemblies\Microsoft.VisualStudio.Shell.Interop.dll" #>
 <#@ assembly name="System.Core.dll" #>
 <#@ assembly name="System.Data" #>
 <#@ assembly name="System.Xml" #>
@@ -20,11 +16,7 @@
 <#@ import namespace="System.Text.RegularExpressions" #>
 <#@ import namespace="System.Configuration" #>
 <#@ import namespace="System.IO" #>
-<#@ import namespace="Microsoft.VisualStudio.TextTemplating" #>
 <#@ import namespace="EnvDTE" #>
-<#@ import namespace="Microsoft.VisualStudio.Shell" #>
-<#@ import namespace="Interop = Microsoft.VisualStudio.OLE.Interop" #>
-<#@ import namespace="Microsoft.VisualStudio.Data.Services" #>
 <#+
 public class Settings
 {
@@ -55,21 +47,17 @@ public class Settings
 		}
 	}
 
-	public static IVsDataConnection Connection
+	public static IDataConnection Connection
 	{
 		get
 		{
 			if (Host is IServiceProvider service)
 			{
-				if (service.GetService(typeof(EnvDTE.DTE)) is Interop.IServiceProvider provider)
+				if (service.GetService(typeof(ISubSonicCoreService)) is ISubSonicCoreService subsonic)
 				{
-					if (PackageUtilities.QueryService<IVsDataExplorerConnectionManager>(provider) is IVsDataExplorerConnectionManager manager)
-					{
-						return manager.Connections[connectionKey].Connection;
-					}
-					throw new InvalidOperationException("Unable to resolve IVsDataExplorerConnectionManager!");
+					return subsonic.Hello;
 				}
-				throw new InvalidOperationException("Unable to resolve DTE as Interop.IServiceProvider!");
+				throw new InvalidOperationException("Unable to resolve ISubSonicCoreService!");
 			}
 			throw new Exception("Host property returned unexpected value (null)");
 		}

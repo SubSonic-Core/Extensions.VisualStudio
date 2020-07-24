@@ -6,13 +6,24 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SubSonic.Core.Template.Forms
+namespace SubSonic.Core.VisualStudio.Forms
 {
     public partial class DataContextForm
     {
         private readonly IVsDataExplorerConnectionManager connectionManager;
 
-        private IList ListOfConnections => connectionManager.Connections.Keys.ToList();
+        private IList ListOfConnections
+        {
+            get
+            {
+                if (connectionManager != null)
+                {
+                    return connectionManager.Connections.Keys.ToList();
+                }
+
+                return new List<string>();
+            }
+        }
 
         public string SelectedConnectionName => connections.SelectedItem.ToString();
 

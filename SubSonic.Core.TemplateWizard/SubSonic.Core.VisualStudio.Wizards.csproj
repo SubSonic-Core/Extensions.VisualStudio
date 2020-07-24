@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{9BAF9554-BBFE-4B0C-8002-C5333CB69C1E}</ProjectGuid>
+    <ProjectGuid>{B9D14AC6-EE1A-4A63-BED9-B8A271F595D9}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SubSonic.Core.TemplateWizard</RootNamespace>
-    <AssemblyName>SubSonic.Core.TemplateWizard</AssemblyName>
+    <RootNamespace>SubSonic.Core.VisualStudio.Wizards</RootNamespace>
+    <AssemblyName>SubSonic.Core.VisualStudio.Wizards</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>

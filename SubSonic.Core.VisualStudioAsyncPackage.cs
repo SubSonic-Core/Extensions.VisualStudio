@@ -1,8 +1,14 @@
 ﻿using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.TextTemplating;
+using Microsoft.VisualStudio.TextTemplating.VSHost;
+using SubSonic.Core.VisualStudio.Services;
 using System;
+using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
+using System.Threading.Tasks;
 using Task = System.Threading.Tasks.Task;
 
 namespace SubSonic.Core.VisualStudio
@@ -24,9 +30,11 @@ namespace SubSonic.Core.VisualStudio
     /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
     /// </para>
     /// </remarks>
+    [ProvideService((typeof(SSubSonicCoreService)), IsAsyncQueryable = true)]
+    [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
-    [Guid(SubSonicCoreVisualStudioPackage.PackageGuidString)]
-    public sealed class SubSonicCoreVisualStudioPackage : AsyncPackage
+    [Guid(PackageGuidString)]
+    public sealed class SubSonicCoreVisualStudioAsyncPackage : AsyncPackage
     {
         /// <summary>
         /// SubSonic.Core.VisualStudioPackage GUID string.
@@ -44,11 +52,27 @@ namespace SubSonic.Core.VisualStudio
         /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
+            await base.InitializeAsync(cancellationToken, progress);
+
             // When initialized asynchronously, the current thread may be a background thread at this point.
             // Do any initialization that requires the UI thread after switching to the UI thread.
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+            AsyncServiceCreatorCallback callback = new AsyncServiceCreatorCallback(CreateServiceAsync);
+
+            AddService(typeof(SSubSonicCoreService), CreateServiceAsync, true);
         }
         
+        public async Task<object> CreateServiceAsync(IAsyncServiceContainer container, CancellationToken cancellationToken, Type serviceType)
+        {
+            if (serviceType == typeof(SSubSonicCoreService))
+            {
+                return await new SubSonicCoreService(this).InitializeAsync(cancellationToken);
+            }
+
+            return null;
+        }
+
         #endregion
     }
 }

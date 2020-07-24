@@ -1,17 +1,15 @@
 ﻿using EnvDTE;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.Data.Services;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TemplateWizard;
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
-using Microsoft.VisualStudio.Shell;
 using Interop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace SubSonic.Core.Template.Wizards
+namespace SubSonic.Core.VisualStudio.Wizards
 {
     using Forms;
-
 
     public class DataContextWizard
         : IWizard
@@ -19,7 +17,7 @@ namespace SubSonic.Core.Template.Wizards
         Interop.IServiceProvider Provider { get; set; }
 
         private DataContextForm inputForm;
-        private string customMessage;
+
         private bool shouldAddItems;
 
         public void BeforeOpeningFile(ProjectItem projectItem)

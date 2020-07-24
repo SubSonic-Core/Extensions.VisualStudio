@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace SubSonic.Core.VisualStudio.Wizards {
+namespace SubSonic.Core.VisualStudio {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace SubSonic.Core.VisualStudio.Wizards {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class DataContextResources {
+    internal class SubSonicCoreErrors {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal DataContextResources() {
+        internal SubSonicCoreErrors() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace SubSonic.Core.VisualStudio.Wizards {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SubSonic.Core.VisualStudio.Wizards.DataContextResources", typeof(DataContextResources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SubSonic.Core.VisualStudio.SubSonicCoreErrors", typeof(SubSonicCoreErrors).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,20 +61,11 @@ namespace SubSonic.Core.VisualStudio.Wizards {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Sql Server Connections.
+        ///   Looks up a localized string similar to {0} was not found in the connection manager..
         /// </summary>
-        internal static string ConnectionsLabelText {
+        internal static string MissingConnectionKey {
             get {
-                return ResourceManager.GetString("ConnectionsLabelText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Connection.
-        /// </summary>
-        internal static string ConnectionTabText {
-            get {
-                return ResourceManager.GetString("ConnectionTabText", resourceCulture);
+                return ResourceManager.GetString("MissingConnectionKey", resourceCulture);
             }
         }
     }
