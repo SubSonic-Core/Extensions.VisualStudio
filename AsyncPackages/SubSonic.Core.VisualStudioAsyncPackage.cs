@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.TextTemplating;
 using Microsoft.VisualStudio.TextTemplating.VSHost;
 using SubSonic.Core.VisualStudio.AsyncPackages.Menus;
 using SubSonic.Core.VisualStudio.CustomTools;
@@ -15,7 +14,6 @@ using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -42,7 +40,7 @@ namespace SubSonic.Core.VisualStudio
     /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
     /// </para>
     /// </remarks>
-    
+
     [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [ProvideService((typeof(SSubSonicTemplatingService)), IsAsyncQueryable = true)]
@@ -53,6 +51,7 @@ namespace SubSonic.Core.VisualStudio
     [ProvideCodeGeneratorExtension(nameof(SubSonicTemplatingFileGenerator), ".stt", ProjectSystem = "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}", ProjectSystemPackage = "{164b10b9-b200-11d0-8c61-00a0c91e29d5}")]
     [ProvideCodeGeneratorExtension(nameof(SubSonicTemplatingFileGenerator), ".stt", ProjectSystem = "{E24C65DC-7377-472b-9ABA-BC803B73C61A}", ProjectSystemPackage = "{39c9c826-8ef8-4079-8c95-428f5b1c323f}")]
     [Guid(PackageGuidString)]
+    [ProvideMenuResource("Menus.ctmenu", 1)]
     public sealed class SubSonicCoreVisualStudioAsyncPackage 
         : AsyncPackage
         , IOleCommandTarget
@@ -128,8 +127,8 @@ namespace SubSonic.Core.VisualStudio
             // When initialized asynchronously, the current thread may be a background thread at this point.
             // Do any initialization that requires the UI thread after switching to the UI thread.
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            await SubSonicTemplatingDebugCommand.InitializeAsync(this);
 
-            new SubSonicTemplatingCommandSet(this);
             optionsAutomation = new OrchestratorOptionsAutomation(this);
             AsyncServiceCreatorCallback callback = new AsyncServiceCreatorCallback(CreateServiceAsync);
 
@@ -144,6 +143,7 @@ namespace SubSonic.Core.VisualStudio
                     this.solutionEvents.AfterClosing += SolutionEvents_AfterClosing;
                 }
             }
+            
         }
 
         private void SubSonicTemplatingService_DebugCompleted(object sender, DebugTemplateEventArgs e)

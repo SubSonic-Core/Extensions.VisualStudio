@@ -51,8 +51,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AsyncPackages\Menus\BaseSubSonicCommand.cs" />
     <Compile Include="AsyncPackages\Menus\SubSonicCommandIDS.cs" />
-    <Compile Include="AsyncPackages\Menus\SubSonicTemplatingCommandSet.cs" />
+    <Compile Include="AsyncPackages\Menus\SubSonicTemplatingDebugCommand.cs" />
     <Compile Include="Attributes\ProvideAssemblyObjectAttribute.cs" />
     <Compile Include="CustomTools\SubSonicTemplatingFileGenerator\TextTemplating.cs" />
     <Compile Include="Extensions\AsyncServiceProvider.cs" />
@@ -82,6 +83,10 @@
     <Content Include="App.config">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="AsyncPackages\Menus\Resources\SubSonicTemplatingCommand.png" />
+    <VSCTCompile Include="AsyncPackages\Menus\Localization\SubSonicCoreVisualStudioAsyncPackage.vsct">
+      <ResourceName>Menus.ctmenu</ResourceName>
+    </VSCTCompile>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
