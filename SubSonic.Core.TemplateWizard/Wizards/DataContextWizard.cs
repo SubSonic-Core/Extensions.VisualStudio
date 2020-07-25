@@ -9,7 +9,7 @@ using Interop = Microsoft.VisualStudio.OLE.Interop;
 
 namespace SubSonic.Core.VisualStudio.Wizards
 {
-    using Forms;
+    using SubSonic.Core.VisualStudio.Forms;
 
     public class DataContextWizard
         : IWizard

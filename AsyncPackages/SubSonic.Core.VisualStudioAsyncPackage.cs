@@ -5,9 +5,11 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextTemplating;
 using Microsoft.VisualStudio.TextTemplating.VSHost;
+using SubSonic.Core.VisualStudio.AsyncPackages.Menus;
 using SubSonic.Core.VisualStudio.CustomTools;
 using SubSonic.Core.VisualStudio.Services;
 using SubSonic.Core.VisualStudio.Templating;
+using SubSonic.Core.VisualStudio.Wizards.Forms;
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
@@ -16,6 +18,9 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using VSLangProj;
+using VsWebSite90;
 using Task = System.Threading.Tasks.Task;
 
 namespace SubSonic.Core.VisualStudio
@@ -59,6 +64,10 @@ namespace SubSonic.Core.VisualStudio
         private OrchestratorOptionsAutomation optionsAutomation;
         private static TextTemplatingCallback callback;
         private SolutionEvents solutionEvents;
+        private bool isDebuggingTemplate;
+        private ProjectItem templateProjectItem;
+        private string debugResults;
+
         /// <summary>
         /// SubSonic.Core.VisualStudioPackage GUID string.
         /// </summary>
@@ -103,6 +112,8 @@ namespace SubSonic.Core.VisualStudio
 
         public OrchestratorOptionsAutomation OptionsAutomation => optionsAutomation;
 
+        public bool IsDebuggingTemplate => isDebuggingTemplate;
+
         /// <summary>
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
@@ -118,6 +129,7 @@ namespace SubSonic.Core.VisualStudio
             // Do any initialization that requires the UI thread after switching to the UI thread.
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
+            new SubSonicTemplatingCommandSet(this);
             optionsAutomation = new OrchestratorOptionsAutomation(this);
             AsyncServiceCreatorCallback callback = new AsyncServiceCreatorCallback(CreateServiceAsync);
 
@@ -131,6 +143,37 @@ namespace SubSonic.Core.VisualStudio
                 {
                     this.solutionEvents.AfterClosing += SolutionEvents_AfterClosing;
                 }
+            }
+        }
+
+        private void SubSonicTemplatingService_DebugCompleted(object sender, DebugTemplateEventArgs e)
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+
+                debugResults = e.TemplateOutput;
+
+                if (templateProjectItem.Object is VSProjectItem projectItem1)
+                {
+                    projectItem1.RunCustomTool();
+                }
+
+                if (templateProjectItem.Object is VSWebProjectItem2 projectItem2)
+                {
+                    projectItem2.RunCustomTool();
+                }
+            }
+            catch(Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                isDebuggingTemplate = false;
+                debugResults = null;
+                subSonicTemplatingService.DebugCompleted -= SubSonicTemplatingService_DebugCompleted;
+                EndErrorSession();
             }
         }
 
@@ -184,6 +227,62 @@ namespace SubSonic.Core.VisualStudio
             return default;
         }
         #endregion
+
+        public void ClearTemplatingErrorStatus()
+        {
+            if (subSonicTemplatingService != null)
+            {
+                subSonicTemplatingService.LastInvocationRaisedErrors = false;
+            }
+        }
+
+        internal void DebugTemplate(ProjectItem projectItem, IVsHierarchy hierarchy, string filename, string content)
+        {
+            if (isDebuggingTemplate)
+            {
+                throw new InvalidOperationException(SubSonicCoreErrors.CannotDebugMultipleTemplates);
+            }
+
+            if (ShowSecurityWarningDialog())
+            {
+                templateProjectItem = projectItem;
+
+                try
+                {
+                    isDebuggingTemplate = true;
+
+                    callback.Initialize();
+
+                    BeginErrorSession();
+                    subSonicTemplatingService.DebugCompleted += SubSonicTemplatingService_DebugCompleted;
+                    subSonicTemplatingService.DebugTemplateAsync(filename, content, callback, hierarchy);
+                }
+                catch(Exception)
+                {
+                    isDebuggingTemplate = false;
+                    throw;
+                }
+            }
+        }
+
+        
+
+        private bool ShowSecurityWarningDialog()
+        {
+            if (!OptionsAutomation.ShowWarningDialog)
+            {
+                return true;
+            }
+
+            TemplatingSecurityWarning warning = new TemplatingSecurityWarning();
+
+            if (warning.ShowDialog() == DialogResult.Cancel)
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         protected override void Dispose(bool disposing)
         {
