@@ -17,6 +17,21 @@ namespace SubSonic.Core.VisualStudio.Services
         private static readonly Regex directiveParsingRegex = new Regex("template.*\\slanguage\\s*=\\s*\"(?<pvalue>.*?)(?<=[^\\\\](\\\\\\\\)*)\"", RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.ExplicitCapture);
 
         #region IDebugTextTemplating
+
+        public event EventHandler<DebugTemplateEventArgs> DebugCompleted
+        {
+            add
+            {
+                DebugTemplating.DebugCompleted += value;
+            }
+            remove
+            {
+                DebugTemplating.DebugCompleted -= value;
+            }
+        }
+
+        public bool LastInvocationRaisedErrors { get; set; }
+
         public void DebugTemplateAsync(string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy)
         {
             DebugTemplating.DebugTemplateAsync(inputFilename, content, callback, hierarchy);

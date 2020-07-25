@@ -17,10 +17,11 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextTemplating.VSHost;
 using SubSonic.Core.VisualStudio.Templating;
 using Microsoft.VisualStudio.Data.Services;
+using System.Runtime.Remoting;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
-    public partial class SubSonicTemplatingService
+    public sealed partial class SubSonicTemplatingService
         : MarshalByRefObject
         , SSubSonicTemplatingService
         , ISubSonicTemplatingService
@@ -29,14 +30,28 @@ namespace SubSonic.Core.VisualStudio.Services
         , IServiceProvider
         , IDisposable
     {
-        private readonly IAsyncServiceProvider serviceProvider;
+        private readonly SubSonicCoreVisualStudioAsyncPackage package;
+        private readonly ErrorListProvider errorListProvider;
+        private AppDomain transformDomain;
         
-        public SubSonicTemplatingService(IAsyncServiceProvider serviceProvider)
+        public SubSonicTemplatingService(SubSonicCoreVisualStudioAsyncPackage package)
         {
-            Trace.WriteLine($"Constructing a new instance of {nameof(SubSonicTemplatingService)}.");
+            ThreadHelper.ThrowIfNotOnUIThread();
 
-            this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            Trace.WriteLine($"Constructing a new instance of {nameof(SubSonicTemplatingService)}.");
+            this.package = package ?? throw new ArgumentNullException(nameof(package));
+            this.errorListProvider = new ErrorListProvider(package);
+            this.errorListProvider.MaintainInitialTaskOrder = true;
+
+            package.DTE.Events.SolutionEvents.AfterClosing += SolutionEvents_AfterClosing;
         }
+
+        private void SolutionEvents_AfterClosing()
+        {
+            errorListProvider?.Tasks?.Clear();
+        }
+
+        private IAsyncServiceProvider AsyncServiceProvider => package;
 
         public async Task<object> InitializeAsync(CancellationToken cancellationToken)
         {
@@ -45,7 +60,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
             //IVsShell shell = await serviceProvider.GetServiceAsync<SVsShell, IVsShell>();
 
-            this.templating = await serviceProvider.GetServiceAsync<STextTemplating, ITextTemplating>();
+            this.templating = await AsyncServiceProvider.GetServiceAsync<STextTemplating, ITextTemplating>();
 
             if (GetService(typeof(EnvDTE.DTE)) is EnvDTE.DTE dte)
             {
@@ -80,17 +95,7 @@ namespace SubSonic.Core.VisualStudio.Services
         private ITextTemplating templating;
         private bool disposedValue;
 
-        public event EventHandler<DebugTemplateEventArgs> DebugCompleted
-        {
-            add
-            {
-                DebugTemplating.DebugCompleted += value;
-            }
-            remove
-            {
-                DebugTemplating.DebugCompleted -= value;
-            }
-        }
+        
 
         private ITextTemplatingComponents Components => this.templating as ITextTemplatingComponents;
 
@@ -170,12 +175,41 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public void SetFileExtension(string extension)
         {
-            EngineHost.SetFileExtension(extension);
+            if (Callback != null)
+            {
+                Callback.SetFileExtension(extension);
+            }
+
+            extension = extension.Trim('.');
+
+            ThreadHelper.ThrowIfNotOnUIThread();
+            
+            if (extension.Equals("cs", StringComparison.OrdinalIgnoreCase))
+            {
+                SqmFacade.T4SetFileExtensionCS();
+            }
+            else if (extension.Equals("vb", StringComparison.OrdinalIgnoreCase))
+            {
+                SqmFacade.T4SetFileExtensionVB();
+            }
+            else
+            {
+                SqmFacade.T4SetFileExtensionOther();
+            }
         }
 
         public void SetOutputEncoding(Encoding encoding, bool fromOutputDirective)
         {
-            EngineHost.SetOutputEncoding(encoding, fromOutputDirective);
+            Callback.SetOutputEncoding(encoding, fromOutputDirective);
+        }
+
+        internal void UnloadGenerationAppDomain()
+        {
+            if (this.transformDomain != null)
+            {
+                AppDomain.Unload(transformDomain);
+                transformDomain = null;
+            }
         }
         #endregion
 
@@ -221,30 +255,24 @@ namespace SubSonic.Core.VisualStudio.Services
 
                 ThreadHelper.JoinableTaskFactory.Run(async delegate
                 {
-                    result = await serviceProvider.GetServiceAsync(serviceType);
+                    result = await AsyncServiceProvider.GetServiceAsync(serviceType);
                 });
             }
 
             return result;
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             if (!disposedValue)
             {
                 if (disposing)
                 {
-                    if (templating is IDisposable disposable)
-                    {
-                        try
-                        {
-                            disposable?.Dispose();
-                        }
-                        finally
-                        {
-                            templating = null;
-                        }
-                    }
+                    package.DTE.Events.SolutionEvents.AfterClosing -= SolutionEvents_AfterClosing;
+                    errorListProvider.Dispose();
+                    RemotingServices.Disconnect(this);
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
@@ -262,6 +290,8 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public void Dispose()
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);

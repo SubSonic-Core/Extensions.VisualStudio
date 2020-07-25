@@ -16,7 +16,10 @@ namespace SubSonic.Core.VisualStudio.Templating
 
         public static void Initialize(DTE dte)
         {
-            SqmFacade.dte = dte;
+            if (SqmFacade.dte == null)
+            {
+                SqmFacade.dte = dte;
+            }
         }
 
         private static void RunCommand(Guid commandGuid, int cmdId)
