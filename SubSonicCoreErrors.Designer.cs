@@ -70,11 +70,65 @@ namespace SubSonic.Core.VisualStudio {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to DebugErrorOutput.
+        /// </summary>
+        internal static string DebugErrorOutput {
+            get {
+                return ResourceManager.GetString("DebugErrorOutput", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error attaching to run factory process..
+        /// </summary>
+        internal static string ErrorAttachingToRunFactoryProcess {
+            get {
+                return ResourceManager.GetString("ErrorAttachingToRunFactoryProcess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error starting run factory process..
+        /// </summary>
+        internal static string ErrorStartingRunFactoryProcess {
+            get {
+                return ResourceManager.GetString("ErrorStartingRunFactoryProcess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exception Attaching To Process Factory: {0}.
+        /// </summary>
+        internal static string ExceptionAttachingToRunFactoryProcess {
+            get {
+                return ResourceManager.GetString("ExceptionAttachingToRunFactoryProcess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error Starting Transformation: {0}.
+        /// </summary>
+        internal static string ExceptionStartingRunFactoryProcess {
+            get {
+                return ResourceManager.GetString("ExceptionStartingRunFactoryProcess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} was not found in the connection manager..
         /// </summary>
         internal static string MissingConnectionKey {
             get {
                 return ResourceManager.GetString("MissingConnectionKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to register ipc channel: {0}.
+        /// </summary>
+        internal static string RegisterIpcChannelFailed {
+            get {
+                return ResourceManager.GetString("RegisterIpcChannelFailed", resourceCulture);
             }
         }
     }

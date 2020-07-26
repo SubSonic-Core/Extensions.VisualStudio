@@ -8,7 +8,7 @@ using SubSonic.Core.VisualStudio.AsyncPackages.Menus;
 using SubSonic.Core.VisualStudio.CustomTools;
 using SubSonic.Core.VisualStudio.Services;
 using SubSonic.Core.VisualStudio.Templating;
-using SubSonic.Core.VisualStudio.Wizards.Forms;
+using SubSonic.Core.VisualStudio.Forms;
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
@@ -209,6 +209,8 @@ namespace SubSonic.Core.VisualStudio
 
         internal void BeginErrorSession()
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             if (subSonicTemplatingService == null)
             {
                 ThreadHelper.JoinableTaskFactory.Run(async () => await CreateTextTemplatingServiceAsync(this));
@@ -238,6 +240,8 @@ namespace SubSonic.Core.VisualStudio
 
         internal void DebugTemplate(ProjectItem projectItem, IVsHierarchy hierarchy, string filename, string content)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             if (isDebuggingTemplate)
             {
                 throw new InvalidOperationException(SubSonicCoreErrors.CannotDebugMultipleTemplates);
@@ -254,6 +258,7 @@ namespace SubSonic.Core.VisualStudio
                     callback.Initialize();
 
                     BeginErrorSession();
+
                     subSonicTemplatingService.DebugCompleted += SubSonicTemplatingService_DebugCompleted;
                     subSonicTemplatingService.DebugTemplateAsync(filename, content, callback, hierarchy);
                 }

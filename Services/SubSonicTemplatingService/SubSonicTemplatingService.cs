@@ -18,6 +18,7 @@ using Microsoft.VisualStudio.TextTemplating.VSHost;
 using SubSonic.Core.VisualStudio.Templating;
 using Microsoft.VisualStudio.Data.Services;
 using System.Runtime.Remoting;
+using System.ComponentModel;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -33,6 +34,7 @@ namespace SubSonic.Core.VisualStudio.Services
         private readonly SubSonicCoreVisualStudioAsyncPackage package;
         private readonly ErrorListProvider errorListProvider;
         private AppDomain transformDomain;
+        private Process transformProcess;
         
         public SubSonicTemplatingService(SubSonicCoreVisualStudioAsyncPackage package)
         {
@@ -205,10 +207,34 @@ namespace SubSonic.Core.VisualStudio.Services
 
         internal void UnloadGenerationAppDomain()
         {
-            if (this.transformDomain != null)
+            if (transformDomain != null)
             {
                 AppDomain.Unload(transformDomain);
                 transformDomain = null;
+            }
+            if (transformProcess != null)
+            {
+                try
+                {
+                    transformProcess.Kill();
+                    transformProcess = null;
+                    if ((debugThread != null) && this.debugThread.IsAlive)
+                    {
+                        debugThread.Abort();
+                    }
+                }
+                catch (Win32Exception)
+                {
+                }
+                catch (InvalidOperationException)
+                {
+                }
+                catch (ThreadAbortException)
+                {
+                }
+                catch (ThreadStateException)
+                {
+                }
             }
         }
         #endregion

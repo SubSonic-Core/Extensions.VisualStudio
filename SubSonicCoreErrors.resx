@@ -120,7 +120,25 @@
   <data name="CannotDebugMultipleTemplates" xml:space="preserve">
     <value>Debugging multiple templates is not allowed.</value>
   </data>
+  <data name="DebugErrorOutput" xml:space="preserve">
+    <value>DebugErrorOutput</value>
+  </data>
+  <data name="ErrorAttachingToRunFactoryProcess" xml:space="preserve">
+    <value>Error attaching to run factory process.</value>
+  </data>
+  <data name="ErrorStartingRunFactoryProcess" xml:space="preserve">
+    <value>Error starting run factory process.</value>
+  </data>
+  <data name="ExceptionAttachingToRunFactoryProcess" xml:space="preserve">
+    <value>Exception Attaching To Process Factory: {0}</value>
+  </data>
+  <data name="ExceptionStartingRunFactoryProcess" xml:space="preserve">
+    <value>Error Starting Transformation: {0}</value>
+  </data>
   <data name="MissingConnectionKey" xml:space="preserve">
     <value>{0} was not found in the connection manager.</value>
+  </data>
+  <data name="RegisterIpcChannelFailed" xml:space="preserve">
+    <value>Failed to register ipc channel: {0}</value>
   </data>
 </root>

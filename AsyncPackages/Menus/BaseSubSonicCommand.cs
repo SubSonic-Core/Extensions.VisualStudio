@@ -20,7 +20,7 @@ namespace SubSonic.Core.VisualStudio.AsyncPackages.Menus
 
                 if (SubSonicPackage.GetService<SVsSolutionBuildManager>() is IVsSolutionBuildManager2 service)
                 {
-                    ErrorHandler.ThrowOnFailure(service.SaveDocumentsBeforeBuild(null, (uint)VSITEMID.Nil, 0));
+                    ErrorHandler.ThrowOnFailure(service.SaveDocumentsBeforeBuild(null, (uint)0xfffffffe, 0));
                 }
             }
             catch (COMException ex)

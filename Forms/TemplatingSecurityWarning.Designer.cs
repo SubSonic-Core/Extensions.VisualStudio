@@ -1,4 +1,4 @@
-﻿namespace SubSonic.Core.VisualStudio.Wizards.Forms
+﻿namespace SubSonic.Core.VisualStudio.Forms
 {
     partial class TemplatingSecurityWarning
     {
@@ -41,6 +41,7 @@
             this.ok.TabIndex = 0;
             this.ok.Text = "&Ok";
             this.ok.UseVisualStyleBackColor = true;
+            this.ok.Click += new System.EventHandler(this.Ok_Click);
             // 
             // cancel
             // 
@@ -53,6 +54,7 @@
             this.cancel.Text = "&Cancel";
             this.cancel.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText;
             this.cancel.UseVisualStyleBackColor = true;
+            this.cancel.Click += new System.EventHandler(this.Cancel_Click);
             // 
             // TemplatingSecurityWarning
             // 
@@ -68,6 +70,8 @@
             this.ResumeLayout(false);
 
         }
+
+        
 
         #endregion
 

@@ -8,13 +8,27 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace SubSonic.Core.VisualStudio.Wizards.Forms
+namespace SubSonic.Core.VisualStudio.Forms
 {
     public partial class TemplatingSecurityWarning : Form
     {
         public TemplatingSecurityWarning()
         {
             InitializeComponent();
+        }
+
+        private void Ok_Click(object sender, System.EventArgs e)
+        {
+            DialogResult = DialogResult.OK;
+
+            Close();
+        }
+
+        private void Cancel_Click(object sender, System.EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+
+            Close();
         }
     }
 }
