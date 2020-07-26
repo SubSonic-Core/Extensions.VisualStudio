@@ -141,4 +141,7 @@
   <data name="RegisterIpcChannelFailed" xml:space="preserve">
     <value>Failed to register ipc channel: {0}</value>
   </data>
+  <data name="TextTemplatingUnavailable" xml:space="preserve">
+    <value>Text Templating Service is Unavailable</value>
+  </data>
 </root>

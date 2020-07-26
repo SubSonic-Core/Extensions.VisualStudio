@@ -131,5 +131,14 @@ namespace SubSonic.Core.VisualStudio {
                 return ResourceManager.GetString("RegisterIpcChannelFailed", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Text Templating Service is Unavailable.
+        /// </summary>
+        internal static string TextTemplatingUnavailable {
+            get {
+                return ResourceManager.GetString("TextTemplatingUnavailable", resourceCulture);
+            }
+        }
     }
 }

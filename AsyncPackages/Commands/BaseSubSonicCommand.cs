@@ -6,7 +6,7 @@ using System;
 using System.Runtime.InteropServices;
 using static Microsoft.VisualStudio.VSConstants;
 
-namespace SubSonic.Core.VisualStudio.AsyncPackages.Menus
+namespace SubSonic.Core.VisualStudio.AsyncPackages.Commands
 {
     public abstract class BaseSubSonicCommand
     {
@@ -57,7 +57,7 @@ namespace SubSonic.Core.VisualStudio.AsyncPackages.Menus
 
                 }
             }
-            return null;
+            return "";
         }
 
         protected bool TemplatingErrorStatus => SubSonicPackage?.TextTemplatingServiceErrorStatus ?? default;

@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextTemplating.VSHost;
-using SubSonic.Core.VisualStudio.AsyncPackages.Menus;
+using SubSonic.Core.VisualStudio.AsyncPackages.Commands;
 using SubSonic.Core.VisualStudio.CustomTools;
 using SubSonic.Core.VisualStudio.Services;
 using SubSonic.Core.VisualStudio.Templating;
@@ -18,7 +18,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using VSLangProj;
-using VsWebSite90;
 using Task = System.Threading.Tasks.Task;
 
 namespace SubSonic.Core.VisualStudio
@@ -105,13 +104,15 @@ namespace SubSonic.Core.VisualStudio
             }
         }
 
-        internal static TextTemplatingCallback TextTemplatingCallback => callback;
+        internal TextTemplatingCallback TextTemplatingCallback => callback;
 
-        internal SubSonicCoreVisualStudioAsyncPackage Singleton => singletonInstance;
+        internal static SubSonicCoreVisualStudioAsyncPackage Singleton => singletonInstance;
 
         public OrchestratorOptionsAutomation OptionsAutomation => optionsAutomation;
 
         public bool IsDebuggingTemplate => isDebuggingTemplate;
+
+        public string DebugResults { get => debugResults; set => debugResults = value; }
 
         /// <summary>
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
@@ -159,7 +160,7 @@ namespace SubSonic.Core.VisualStudio
                     projectItem1.RunCustomTool();
                 }
 
-                if (templateProjectItem.Object is VSWebProjectItem2 projectItem2)
+                if (templateProjectItem.Object is VsWebSite90.VSWebProjectItem2 projectItem2)
                 {
                     projectItem2.RunCustomTool();
                 }
@@ -272,7 +273,7 @@ namespace SubSonic.Core.VisualStudio
 
         
 
-        private bool ShowSecurityWarningDialog()
+        public bool ShowSecurityWarningDialog()
         {
             if (!OptionsAutomation.ShowWarningDialog)
             {

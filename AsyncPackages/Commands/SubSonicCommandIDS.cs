@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SubSonic.Core.VisualStudio.AsyncPackages.Menus
+namespace SubSonic.Core.VisualStudio.AsyncPackages.Commands
 {
     public static class SubSonicCommandIDS
     {

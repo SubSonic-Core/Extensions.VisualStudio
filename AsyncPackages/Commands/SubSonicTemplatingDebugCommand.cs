@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.TextTemplating.VSHost;
 using SubSonic.Core.VisualStudio.CustomTools;
 using System;
 using System.ComponentModel.Design;
@@ -9,7 +10,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Task = System.Threading.Tasks.Task;
 
-namespace SubSonic.Core.VisualStudio.AsyncPackages.Menus
+namespace SubSonic.Core.VisualStudio.AsyncPackages.Commands
 {
     /// <summary>
     /// Command handler
@@ -26,6 +27,8 @@ namespace SubSonic.Core.VisualStudio.AsyncPackages.Menus
         /// Command menu group (command set GUID).
         /// </summary>
         public static readonly Guid CommandSet = new Guid("d1e1f06e-3219-46fe-9b29-960abba35c57");
+
+        public static readonly Guid SolutionCommandSet = new Guid("1496A755-94DE-11DE-8C3F-00C04FC2AAE2");
 
         /// <summary>
         /// VS Package that provides this command, not null.
@@ -45,9 +48,12 @@ namespace SubSonic.Core.VisualStudio.AsyncPackages.Menus
             this.package = package ?? throw new ArgumentNullException(nameof(package));
             commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
 
-            var menuCommandID = new CommandID(CommandSet, CommandId);
-            var menuItem = new OleMenuCommand(OnMenuDebugTemplate, null, OnStatusDebugTemplate, menuCommandID, SubSonicMenuCommands.DebugTemplate);
-            commandService.AddCommand(menuItem);
+            var toolMenuCommandID = new CommandID(CommandSet, CommandId);
+            var toolMenuItem = new OleMenuCommand(OnMenuDebugTemplate, null, OnStatusDebugTemplate, toolMenuCommandID, SubSonicMenuCommands.DebugTemplate);
+            commandService.AddCommand(toolMenuItem);
+            var solutionContextMenuCommandID = new CommandID(SolutionCommandSet, CommandId);
+            var solutionContextMenuItem = new OleMenuCommand(OnMenuDebugTemplate, null, OnStatusDebugTemplate, solutionContextMenuCommandID, SubSonicMenuCommands.DebugTemplate);
+            commandService.AddCommand(solutionContextMenuItem);
         }
 
         /// <summary>
@@ -145,6 +151,7 @@ namespace SubSonic.Core.VisualStudio.AsyncPackages.Menus
                 catch (Exception)
                 {
                     command.Visible = false;
+                    command.Enabled = false;
                 }
             }
         }

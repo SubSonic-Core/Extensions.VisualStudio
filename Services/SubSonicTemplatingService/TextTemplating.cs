@@ -166,7 +166,6 @@ namespace SubSonic.Core.VisualStudio.Services
         }
 
         
-
         public string ProcessTemplate(string inputFile, string content, ITextTemplatingCallback callback = null, object hierarchy = null)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -231,7 +230,7 @@ namespace SubSonic.Core.VisualStudio.Services
             }
             errorSessionDepth++;
 
-            SqmFacade.T4BeginSession();
+            DebugTemplating.BeginErrorSession();
         }
 
         public bool EndErrorSession()
@@ -249,7 +248,9 @@ namespace SubSonic.Core.VisualStudio.Services
                 transformationSessionImplicitlyCreated = false;
             }
 
-            return ((currentErrors?.Count ?? 0) > 0);
+            bool result = DebugTemplating.EndErrorSession();
+
+            return ((currentErrors?.Count ?? 0) > 0) || result;
         }
         #endregion
 
@@ -368,7 +369,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
                 Guid guid = Guid.NewGuid();
 
-                ProcessStartInfo startInfo = new ProcessStartInfo(Path.Combine(GetVSInstallDir(package.ApplicationRegistryRoot), "T4HostProcess.exe"))
+                ProcessStartInfo startInfo = new ProcessStartInfo(Path.Combine(GetVSInstallDir(package.ApplicationRegistryRoot), "T4VSHostProcess.exe"), guid.ToString())
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true
