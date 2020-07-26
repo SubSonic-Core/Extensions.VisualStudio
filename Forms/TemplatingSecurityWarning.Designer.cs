@@ -28,46 +28,55 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TemplatingSecurityWarning));
             this.ok = new System.Windows.Forms.Button();
             this.cancel = new System.Windows.Forms.Button();
+            this.doNotShowThisMsg = new System.Windows.Forms.CheckBox();
+            this.warning = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // ok
             // 
-            this.ok.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.ok.Location = new System.Drawing.Point(373, 157);
+            resources.ApplyResources(this.ok, "ok");
             this.ok.Name = "ok";
-            this.ok.Size = new System.Drawing.Size(75, 23);
-            this.ok.TabIndex = 0;
-            this.ok.Text = "&Ok";
             this.ok.UseVisualStyleBackColor = true;
             this.ok.Click += new System.EventHandler(this.Ok_Click);
             // 
             // cancel
             // 
-            this.cancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            resources.ApplyResources(this.cancel, "cancel");
             this.cancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancel.Location = new System.Drawing.Point(455, 156);
             this.cancel.Name = "cancel";
-            this.cancel.Size = new System.Drawing.Size(75, 23);
-            this.cancel.TabIndex = 1;
-            this.cancel.Text = "&Cancel";
-            this.cancel.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText;
             this.cancel.UseVisualStyleBackColor = true;
             this.cancel.Click += new System.EventHandler(this.Cancel_Click);
+            // 
+            // doNotShowThisMsg
+            // 
+            resources.ApplyResources(this.doNotShowThisMsg, "doNotShowThisMsg");
+            this.doNotShowThisMsg.Name = "doNotShowThisMsg";
+            this.doNotShowThisMsg.UseVisualStyleBackColor = true;
+            // 
+            // warning
+            // 
+            resources.ApplyResources(this.warning, "warning");
+            this.warning.Name = "warning";
             // 
             // TemplatingSecurityWarning
             // 
             this.AcceptButton = this.ok;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.cancel;
-            this.ClientSize = new System.Drawing.Size(549, 195);
+            this.Controls.Add(this.warning);
+            this.Controls.Add(this.doNotShowThisMsg);
             this.Controls.Add(this.cancel);
             this.Controls.Add(this.ok);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.KeyPreview = true;
             this.Name = "TemplatingSecurityWarning";
-            this.Text = "TemplatingSecurityWarning";
+            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -77,5 +86,7 @@
 
         private System.Windows.Forms.Button ok;
         private System.Windows.Forms.Button cancel;
+        private System.Windows.Forms.CheckBox doNotShowThisMsg;
+        private System.Windows.Forms.Label warning;
     }
 }

@@ -89,7 +89,7 @@
     <Content Include="App.config">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="AsyncPackages\Commands\Resources\SubSonicTemplatingCommand.png" />
+    <Content Include="AsyncPackages\Commands\Resources\SubSonicTemplatingCommand16x16.png" />
     <VSCTCompile Include="AsyncPackages\Commands\Localization\SubSonicCoreVisualStudioAsyncPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
@@ -148,6 +148,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Forms\TemplatingSecurityWarning.en.resx">
+      <DependentUpon>TemplatingSecurityWarning.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\TemplatingSecurityWarning.resx">
       <DependentUpon>TemplatingSecurityWarning.cs</DependentUpon>
     </EmbeddedResource>
