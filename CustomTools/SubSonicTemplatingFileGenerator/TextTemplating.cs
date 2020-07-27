@@ -160,10 +160,15 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                         host.StandardAssemblyReferences.Add(host.ResolveAssemblyReference("System.Data.Common"));
                     }
 
-                    //if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\SubSonic.Core.DataAccessLayer") || x.Contains("SubSonic.Core.DataAccessLayer")))
-                    //{
-                    //    host.StandardAssemblyReferences.Add(host.ResolveAssemblyReference("SubSonic.Core.DataAccessLayer"));
-                    //}
+                    if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\SubSonic.Core.DataAccessLayer")))
+                    {
+                        host.StandardAssemblyReferences.Add(host.ResolveAssemblyReference("SubSonic.Core.DataAccessLayer"));
+                    }
+
+                    if (!host.StandardImports.Any(x => x.Equals("SubSonic", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        host.StandardImports.Add("SubSonic");
+                    }
                 }
 
                 return processor;

@@ -1,3 +1,23 @@
 ﻿﻿<#@ include file="$fileinputname$Settings.ttinclude" #>
+<#@ assembly name="SubSonic.Extensions.SqlServer" #>
+<#@ imports name="SubSonic.Extensions.SqlServer" #>
 <#+
+public class GeneratorContext
+        : SubSonicContext
+{
+    private readonly string connection;
+
+    public GeneratorContext(string connection)
+    {
+        this.connection = connection;
+    }
+
+    protected override void OnDbConfiguring(DbContextOptionsBuilder builder)
+    {
+        builder.UseSqlClient((config, options) =>
+        {
+            config.ConnectionString = connection;
+        });
+    }
+}
 #>

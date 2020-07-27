@@ -68,28 +68,19 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Settings.ttinclude" />
-    <None Include="SubSonicDataContext.stt">
-      <LastGenOutput>SubSonicDataContext1.cs</LastGenOutput>
-      <Generator>TextTemplatingFileGenerator</Generator>
-    </None>
+    <None Include="SubSonicDataContext.stt" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="SubSonicDataModels.stt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>SubSonicDataModels1.cs</LastGenOutput>
-    </None>
+    <None Include="SubSonicDataModels.stt" />
   </ItemGroup>
   <ItemGroup>
     <VSTemplate Include="SubSonicTemplate.vstemplate">
       <OutputSubPath>SubSonic Core</OutputSubPath>
     </VSTemplate>
-    <None Include="BlankTemplate.stt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>BlankTemplate.txt</LastGenOutput>
-    </None>
+    <None Include="BlankTemplate.stt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />

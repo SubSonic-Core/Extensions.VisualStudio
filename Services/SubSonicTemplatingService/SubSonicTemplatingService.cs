@@ -1,26 +1,26 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
-using System.IO;
-using Microsoft.VisualStudio.Threading;
-using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
-using Task = System.Threading.Tasks.Task;
-using Microsoft.VisualStudio.TextTemplating;
-using System.Diagnostics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.CodeDom.Compiler;
-using System.Text;
+﻿using EnvDTE;
+using Microsoft.VisualStudio.Data.Services;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.TextTemplating;
 using Microsoft.VisualStudio.TextTemplating.VSHost;
+using Microsoft.VisualStudio.Threading;
 using SubSonic.Core.VisualStudio.Templating;
-using Microsoft.VisualStudio.Data.Services;
-using System.Runtime.Remoting;
+using System;
+using System.CodeDom.Compiler;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
-using System.Text.RegularExpressions;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.Remoting;
 using System.Runtime.Remoting.Lifetime;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using VSLangProj;
+using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -38,7 +38,7 @@ namespace SubSonic.Core.VisualStudio.Services
         private readonly List<string> standardAssemblyReferences;
         private readonly List<string> standardImports;
         private AppDomain transformDomain;
-        private Process transformProcess;
+        private System.Diagnostics.Process transformProcess;
         private readonly Regex foundAssembly = new Regex(@"[A-Z|a-z]:\\", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 
         public SubSonicTemplatingService(SubSonicCoreVisualStudioAsyncPackage package)
@@ -123,7 +123,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     .Union(new[]
                     {
                         ResolveAssemblyReference(typeof(IDataConnection).Assembly.GetName().Name)
-                    }));
+                    }).Distinct());
                 }
                 return standardAssemblyReferences;
             }
@@ -140,7 +140,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     {
                         typeof(IDataConnection).Namespace,
                         "Microsoft.VisualStudio.TextTemplating"
-                    }));
+                    }).Distinct());
                 }
                 return standardImports;
             }
@@ -170,16 +170,61 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public string ResolveAssemblyReference(string assemblyReference)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             string path = EngineHost.ResolveAssemblyReference(assemblyReference);
 
             if (path.Equals(assemblyReference, StringComparison.Ordinal) &&
                 !foundAssembly.IsMatch(path))
-            {   // failed to find the assembly, could it be referenced via nuget package?
+            {   // failed to find the assembly, could it be referenced via a project reference?
+                if (GetService(typeof(DTE)) is DTE dTE)
+                {
+                    foreach (Project project in dTE.Solution.Projects)
+                    {
+                        if (project.Object is VSProject vsProject)
+                        {
+                            path = ResolveAssemblyReferenceByProject(assemblyReference, vsProject.References);
+                        }
+                        else if (project.Object is VsWebSite.VSWebSite vsWebSite)
+                        {
+                            path = ResolveAssemblyReferenceByProject(assemblyReference, vsWebSite.References);
+                        }
+                    }
+                }
 
-                LogError(false, SubSonicCoreErrors.FileNotFound, -1, -1, $"{path}.dll");
+                if (!foundAssembly.IsMatch(path))
+                {
+                    LogError(false, SubSonicCoreErrors.FileNotFound, -1, -1, $"{assemblyReference}.dll");
+                }
             }
 
             return path;
+        }
+
+        private string ResolveAssemblyReferenceByProject(string assemblyReference, References references)
+        {
+            foreach (Reference reference in references)
+            {
+                if (reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
+                {   // found the reference
+                    return reference.Path;
+                }
+            }
+
+            return assemblyReference;
+        }
+
+        private string ResolveAssemblyReferenceByProject(string assemblyReference, VsWebSite.AssemblyReferences references)
+        {
+            foreach (VsWebSite.AssemblyReference reference in references)
+            {
+                if (reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
+                {   // found the reference
+                    return reference.FullPath;
+                }
+            }
+
+            return assemblyReference;
         }
 
         public Type ResolveDirectiveProcessor(string processorName)

@@ -2,6 +2,7 @@
 <#@ include file="SqlServer.ttinclude" #>
 <#
 	Settings.Host = Host;
+	GeneratorContext Context = new GeneratorContext(Settings.Connection.SafeConnectionString);
 #>
 
 using Microsoft.Extensions.DependencyInjection;
