@@ -33,6 +33,8 @@ namespace SubSonic.Core.VisualStudio.Services
     {
         private readonly SubSonicCoreVisualStudioAsyncPackage package;
         private readonly ErrorListProvider errorListProvider;
+        private readonly List<string> standardAssemblyReferences;
+        private readonly List<string> standardImports;
         private AppDomain transformDomain;
         private Process transformProcess;
         
@@ -41,6 +43,8 @@ namespace SubSonic.Core.VisualStudio.Services
             ThreadHelper.ThrowIfNotOnUIThread();
 
             Trace.WriteLine($"Constructing a new instance of {nameof(SubSonicTemplatingService)}.");
+            this.standardAssemblyReferences = new List<string>();
+            this.standardImports = new List<string>();
             this.package = package ?? throw new ArgumentNullException(nameof(package));
             this.errorListProvider = new ErrorListProvider(package);
             this.errorListProvider.MaintainInitialTaskOrder = true;
@@ -110,12 +114,15 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             get
             {
-                return EngineHost.StandardAssemblyReferences
+                if (!standardAssemblyReferences.Any())
+                {
+                    standardAssemblyReferences.AddRange(EngineHost.StandardAssemblyReferences
                     .Union(new[]
                     {
                         ResolveAssemblyReference(typeof(IDataConnection).Assembly.GetName().Name)
-                    })
-                    .ToList();
+                    }));
+                }
+                return standardAssemblyReferences;
             }
         }
 
@@ -123,13 +130,16 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             get
             {
-                return EngineHost.StandardImports
+                if (!standardImports.Any())
+                {
+                    standardImports.AddRange(EngineHost.StandardImports
                     .Union(new[]
                     {
                         typeof(IDataConnection).Namespace,
                         "Microsoft.VisualStudio.TextTemplating"
-                    })
-                    .ToList();
+                    }));
+                }
+                return standardImports;
             }
         }
 

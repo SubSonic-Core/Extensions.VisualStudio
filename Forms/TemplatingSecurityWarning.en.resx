@@ -127,9 +127,6 @@
   <data name="doNotShowThisMsg.Location" type="System.Drawing.Point, System.Drawing">
     <value>13, 88</value>
   </data>
-  <data name="doNotShowThisMsg.Text" xml:space="preserve">
-    <value>Do not show this message again</value>
-  </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="warning.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Left, Right</value>
@@ -298,20 +295,5 @@
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterParent</value>
-  </data>
-  <data name="$this.Text" xml:space="preserve">
-    <value>Security Warning</value>
-  </data>
-  <data name="cancel.Text" xml:space="preserve">
-    <value>&amp;Cancel</value>
-  </data>
-  <data name="ok.Text" xml:space="preserve">
-    <value>&amp;Run</value>
-  </data>
-  <data name="warning.Text" xml:space="preserve">
-    <value>Running this template can potentially harm your computer. Do not run, if you obtained it from an untrusted source.
-
-Click Run to generate the template.
-Click Cancel to stop the process.</value>
   </data>
 </root>

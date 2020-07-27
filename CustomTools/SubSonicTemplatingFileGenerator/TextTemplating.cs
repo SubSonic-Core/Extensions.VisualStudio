@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TextTemplating.VSHost;
 using Microsoft.VisualStudio.Threading;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Remoting.Messaging;
 using System.Security.Cryptography;
@@ -98,6 +99,8 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
             callback.OutputEncoding = EncodingHelper.GetEncoding(inputFileName) ?? Encoding.UTF8;
 
+            result = result.TrimStart(Environment.NewLine.ToCharArray());
+
             byte[] bytes = callback.OutputEncoding.GetBytes(result);
             byte[] preamble = callback.OutputEncoding.GetPreamble();
             if ((preamble != null) && (preamble.Length != 0))
@@ -139,6 +142,24 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 {
                     processor = await GetServiceAsync<SSubSonicTemplatingService, ITextTemplating>();
                 });
+
+                if (processor is ITextTemplatingEngineHost host)
+                {
+                    if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\System.Core")))
+                    {
+                        host.StandardAssemblyReferences.Add(host.ResolveAssemblyReference("System.Core"));
+                    }
+
+                    if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\System.Data")))
+                    {
+                        host.StandardAssemblyReferences.Add(host.ResolveAssemblyReference("System.Data"));
+                    }
+
+                    if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\System.Data.Common")))
+                    {
+                        host.StandardAssemblyReferences.Add(host.ResolveAssemblyReference("System.Data.Common"));
+                    }
+                }
 
                 return processor;
             }

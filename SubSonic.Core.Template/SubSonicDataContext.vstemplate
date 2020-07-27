@@ -16,10 +16,10 @@
         <Assembly>System</Assembly>
       </Reference>
     </References>
-    <ProjectItem ReplaceParameters="true" CustomTool="SubSonicTemplatingFileGenerator" >SubSonicDataContext.stt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" CustomTool="SubSonicTemplatingFileGenerator" TargetFileName="$fileinputname$.stt" >SubSonicDataContext.stt</ProjectItem>
     <ProjectItem ReplaceParameters="true" CustomTool="SubSonicTemplatingFileGenerator" TargetFileName="$fileinputname$Models.stt">SubSonicDataModels.stt</ProjectItem>
-    <ProjectItem ReplaceParameters="true" TargetFileName="Settings.ttinclude">Settings.ttinclude</ProjectItem>
-    <ProjectItem TargetFileName="SqlServer.ttinclude">SqlServer.ttinclude</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$Settings.ttinclude">Settings.ttinclude</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="SqlServer.ttinclude">SqlServer.ttinclude</ProjectItem>
   </TemplateContent>
   <WizardExtension>
       <Assembly>NuGet.VisualStudio.Interop, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</Assembly>

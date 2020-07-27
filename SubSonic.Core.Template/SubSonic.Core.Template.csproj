@@ -67,7 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <VSTemplate Include="SubSonicDataContext.vstemplate">
-      <OutputSubPath>SubSonic</OutputSubPath>
+      <OutputSubPath>SubSonic Core</OutputSubPath>
       <Culture>9</Culture>
     </VSTemplate>
   </ItemGroup>
@@ -85,6 +85,20 @@
     <None Include="SubSonicDataModels.stt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>SubSonicDataModels1.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="BlankTemplate.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>BlankTemplate.stt</DependentUpon>
+    </Content>
+    <VSTemplate Include="SubSonicTemplate.vstemplate">
+      <OutputSubPath>SubSonic Core</OutputSubPath>
+    </VSTemplate>
+    <None Include="BlankTemplate.stt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>BlankTemplate.txt</LastGenOutput>
     </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

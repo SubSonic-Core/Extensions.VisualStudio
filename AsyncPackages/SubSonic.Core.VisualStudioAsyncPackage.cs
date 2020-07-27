@@ -10,6 +10,7 @@ using SubSonic.Core.VisualStudio.Services;
 using SubSonic.Core.VisualStudio.Templating;
 using SubSonic.Core.VisualStudio.Forms;
 using System;
+using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using System.Diagnostics;
@@ -50,16 +51,16 @@ namespace SubSonic.Core.VisualStudio
     [ProvideCodeGeneratorExtension(nameof(SubSonicTemplatingFileGenerator), ".stt", ProjectSystem = "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}", ProjectSystemPackage = "{164b10b9-b200-11d0-8c61-00a0c91e29d5}")]
     [ProvideCodeGeneratorExtension(nameof(SubSonicTemplatingFileGenerator), ".stt", ProjectSystem = "{E24C65DC-7377-472b-9ABA-BC803B73C61A}", ProjectSystemPackage = "{39c9c826-8ef8-4079-8c95-428f5b1c323f}")]
     [Guid(PackageGuidString)]
+    [ProvideOptionPage(typeof(SecurityOptionPageGrid), SubSonicCoreCategory, SecurityOptionPageGrid.SecurityPageName, 100, 101, true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     public sealed class SubSonicCoreVisualStudioAsyncPackage 
         : AsyncPackage
         , IOleCommandTarget
     {
-        public const string RegistryKeyName = "SubSonicTools";
+        public const string SubSonicCoreCategory = "SubSonic Core";
         public const string TemplatingGeneratorName = nameof(SubSonicTemplatingFileGenerator);
         private SubSonicTemplatingService subSonicTemplatingService;
         private static SubSonicCoreVisualStudioAsyncPackage singletonInstance;
-        private OrchestratorOptionsAutomation optionsAutomation;
         private static TextTemplatingCallback callback;
         private SolutionEvents solutionEvents;
         private bool isDebuggingTemplate;
@@ -78,6 +79,22 @@ namespace SubSonic.Core.VisualStudio
         }
 
         #region Package Members
+
+        private SecurityOptionPageGrid security;
+
+        internal SecurityOptionPageGrid Security
+        {
+            get
+            {
+                if (security is null && 
+                    GetDialogPage(typeof(SecurityOptionPageGrid)) is SecurityOptionPageGrid xsecurity)
+                {
+                    security = xsecurity;
+                }
+
+                return security;
+            }
+        }
 
         public DTE DTE
         {
@@ -108,8 +125,6 @@ namespace SubSonic.Core.VisualStudio
 
         internal static SubSonicCoreVisualStudioAsyncPackage Singleton => singletonInstance;
 
-        public OrchestratorOptionsAutomation OptionsAutomation => optionsAutomation;
-
         public bool IsDebuggingTemplate => isDebuggingTemplate;
 
         public string DebugResults { get => debugResults; set => debugResults = value; }
@@ -130,7 +145,6 @@ namespace SubSonic.Core.VisualStudio
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             await SubSonicTemplatingDebugCommand.InitializeAsync(this);
 
-            optionsAutomation = new OrchestratorOptionsAutomation(this);
             AsyncServiceCreatorCallback callback = new AsyncServiceCreatorCallback(CreateServiceAsync);
 
             AddService(typeof(SSubSonicTemplatingService), CreateServiceAsync, true);
@@ -270,12 +284,10 @@ namespace SubSonic.Core.VisualStudio
                 }
             }
         }
-
         
-
         public bool ShowSecurityWarningDialog()
         {
-            if (!OptionsAutomation.ShowWarningDialog)
+            if (!Security.ShowSecurityWarning)
             {
                 return true;
             }
@@ -286,6 +298,10 @@ namespace SubSonic.Core.VisualStudio
             {
                 return false;
             }
+
+            Security.ShowSecurityWarning = !warning.DoNotShowSecurityWarning;
+
+            Security.SaveSettingsToStorage();
 
             return true;
         }

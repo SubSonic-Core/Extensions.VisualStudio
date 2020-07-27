@@ -17,6 +17,8 @@ namespace SubSonic.Core.VisualStudio.Forms
             InitializeComponent();
         }
 
+        public bool DoNotShowSecurityWarning => doNotShowThisMsg.Checked;
+
         private void Ok_Click(object sender, System.EventArgs e)
         {
             DialogResult = DialogResult.OK;

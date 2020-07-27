@@ -73,6 +73,8 @@
             this.Controls.Add(this.ok);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.KeyPreview = true;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "TemplatingSecurityWarning";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.ResumeLayout(false);
