@@ -115,6 +115,15 @@ namespace SubSonic.Core.VisualStudio {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not locate the file specified..
+        /// </summary>
+        internal static string FileNotFound {
+            get {
+                return ResourceManager.GetString("FileNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} was not found in the connection manager..
         /// </summary>
         internal static string MissingConnectionKey {

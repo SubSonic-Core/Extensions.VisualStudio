@@ -1,6 +1,5 @@
 ﻿<#@ assembly name="EnvDTE" #>
 <#@ assembly name="System.Xml" #>
-<#@ assembly name="System.Configuration" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.Data" #>
 <#@ import namespace="System.Data.SqlClient" #>
@@ -11,7 +10,6 @@
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Text.RegularExpressions" #>
-<#@ import namespace="System.Configuration" #>
 <#@ import namespace="System.IO" #>
 <#@ import namespace="EnvDTE" #>
 <#+

@@ -19,6 +19,8 @@ using SubSonic.Core.VisualStudio.Templating;
 using Microsoft.VisualStudio.Data.Services;
 using System.Runtime.Remoting;
 using System.ComponentModel;
+using System.Text.RegularExpressions;
+using System.Runtime.Remoting.Lifetime;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -37,7 +39,8 @@ namespace SubSonic.Core.VisualStudio.Services
         private readonly List<string> standardImports;
         private AppDomain transformDomain;
         private Process transformProcess;
-        
+        private readonly Regex foundAssembly = new Regex(@"[A-Z|a-z]:\\", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
+
         public SubSonicTemplatingService(SubSonicCoreVisualStudioAsyncPackage package)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -162,12 +165,21 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public AppDomain ProvideTemplatingAppDomain(string content)
         {
-            return EngineHost.ProvideTemplatingAppDomain(content);
+            return transformDomain ?? (transformDomain = EngineHost.ProvideTemplatingAppDomain(content));
         }
 
         public string ResolveAssemblyReference(string assemblyReference)
         {
-            return EngineHost.ResolveAssemblyReference(assemblyReference);
+            string path = EngineHost.ResolveAssemblyReference(assemblyReference);
+
+            if (path.Equals(assemblyReference, StringComparison.Ordinal) &&
+                !foundAssembly.IsMatch(path))
+            {   // failed to find the assembly, could it be referenced via nuget package?
+
+                LogError(false, SubSonicCoreErrors.FileNotFound, -1, -1, $"{path}.dll");
+            }
+
+            return path;
         }
 
         public Type ResolveDirectiveProcessor(string processorName)
@@ -219,8 +231,23 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             if (transformDomain != null)
             {
-                AppDomain.Unload(transformDomain);
-                transformDomain = null;
+                try
+                {
+                    if (transformDomain.GetLifetimeService() is ILease lease)
+                    {
+                        if (lease.CurrentState == LeaseState.Active)
+                        {
+                            AppDomain.Unload(transformDomain);
+                        }
+                    }
+                }
+                catch(AppDomainUnloadedException)
+                {
+                }
+                finally
+                {
+                    transformDomain = null;
+                }
             }
             if (transformProcess != null)
             {

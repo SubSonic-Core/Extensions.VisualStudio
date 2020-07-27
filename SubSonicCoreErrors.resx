@@ -135,6 +135,9 @@
   <data name="ExceptionStartingRunFactoryProcess" xml:space="preserve">
     <value>Error Starting Transformation: {0}</value>
   </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>Could not locate the file specified.</value>
+  </data>
   <data name="MissingConnectionKey" xml:space="preserve">
     <value>{0} was not found in the connection manager.</value>
   </data>

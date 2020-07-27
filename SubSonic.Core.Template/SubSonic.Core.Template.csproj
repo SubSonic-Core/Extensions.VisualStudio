@@ -55,11 +55,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SubSonicDataContext1.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>SubSonicDataContext.stt</DependentUpon>
-    </Compile>
     <None Include="SqlServer.ttinclude" />
   </ItemGroup>
   <ItemGroup>
@@ -88,11 +83,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="BlankTemplate.txt">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>BlankTemplate.stt</DependentUpon>
-    </Content>
     <VSTemplate Include="SubSonicTemplate.vstemplate">
       <OutputSubPath>SubSonic Core</OutputSubPath>
     </VSTemplate>
