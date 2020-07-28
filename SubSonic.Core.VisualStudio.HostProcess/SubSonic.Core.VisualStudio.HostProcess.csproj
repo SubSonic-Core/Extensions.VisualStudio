@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="XCOPY $(OutDir)$(TargetName).exe $(SolutionDir) /y" />
+    <Exec Command="XCOPY $(OutDir)$(TargetName).exe $(SolutionDir) /y&#xD;&#xA;XCOPY $(OutDir)$(TargetName).pdb $(SolutionDir) /y" />
   </Target>
 
 </Project>
