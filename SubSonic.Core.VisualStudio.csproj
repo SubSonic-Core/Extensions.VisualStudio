@@ -99,6 +99,10 @@
     </Content>
     <Content Include="AsyncPackages\Commands\Resources\SubSonicTemplatingCommand16x16.png" />
     <Content Include="Resources\caution.ico" />
+    <Content Include="SubSonicT4HostProcess.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <VSCTCompile Include="AsyncPackages\Commands\Localization\SubSonicCoreVisualStudioAsyncPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
@@ -136,6 +140,8 @@
     <ProjectReference Include="SubSonic.Core.VisualStudio.Common\SubSonic.Core.VisualStudio.Common.csproj">
       <Project>{13fa659b-4b59-4304-a0fe-d0a2f5c4eb30}</Project>
       <Name>SubSonic.Core.VisualStudio.Common</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

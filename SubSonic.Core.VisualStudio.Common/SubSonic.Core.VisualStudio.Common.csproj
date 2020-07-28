@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>SubSonicCoreVisualStudioCommon.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -10,6 +10,12 @@
     <PackageReference Include="H.Pipes" Version="1.13.1" />
     <PackageReference Include="H.Pipes.AccessControl" Version="1.13.3" />
     <PackageReference Include="System.CodeDom" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="SubSonicCoreVisualStudioCommon.snk">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

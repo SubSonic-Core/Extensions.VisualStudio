@@ -12,4 +12,8 @@
     <ProjectReference Include="..\SubSonic.Core.VisualStudio.Common\SubSonic.Core.VisualStudio.Common.csproj" />
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="XCOPY $(OutDir)$(TargetName).exe $(SolutionDir) /y" />
+  </Target>
+
 </Project>

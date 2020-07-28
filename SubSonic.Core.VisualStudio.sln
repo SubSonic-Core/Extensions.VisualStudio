@@ -4,14 +4,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.30320.27
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubSonic.Core.VisualStudio", "SubSonic.Core.VisualStudio.csproj", "{817A01DD-7E61-41B8-86C5-57F998A7A520}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4931DB5E-ED24-4E0C-AC2A-0AD6011DC361} = {4931DB5E-ED24-4E0C-AC2A-0AD6011DC361}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubSonic.Core.Template", "SubSonic.Core.Template\SubSonic.Core.Template.csproj", "{432D4CE0-CBD6-4E61-81F5-0D995A5CF06F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubSonic.Core.VisualStudio.Wizards", "SubSonic.Core.TemplateWizard\SubSonic.Core.VisualStudio.Wizards.csproj", "{B9D14AC6-EE1A-4A63-BED9-B8A271F595D9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubSonic.Core.VisualStudio.Common", "SubSonic.Core.VisualStudio.Common\SubSonic.Core.VisualStudio.Common.csproj", "{13FA659B-4B59-4304-A0FE-D0A2F5C4EB30}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SubSonic.Core.VisualStudio.Common", "SubSonic.Core.VisualStudio.Common\SubSonic.Core.VisualStudio.Common.csproj", "{13FA659B-4B59-4304-A0FE-D0A2F5C4EB30}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubSonic.Core.VisualStudio.HostProcess", "SubSonic.Core.VisualStudio.HostProcess\SubSonic.Core.VisualStudio.HostProcess.csproj", "{4931DB5E-ED24-4E0C-AC2A-0AD6011DC361}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SubSonic.Core.VisualStudio.HostProcess", "SubSonic.Core.VisualStudio.HostProcess\SubSonic.Core.VisualStudio.HostProcess.csproj", "{4931DB5E-ED24-4E0C-AC2A-0AD6011DC361}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
