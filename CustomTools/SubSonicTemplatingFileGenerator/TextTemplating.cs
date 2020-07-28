@@ -6,11 +6,13 @@ using Microsoft.VisualStudio.TextTemplating.VSHost;
 using Microsoft.VisualStudio.Threading;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Remoting.Messaging;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SubSonic.Core.VisualStudio.CustomTools
@@ -21,6 +23,10 @@ namespace SubSonic.Core.VisualStudio.CustomTools
         : BaseCodeGeneratorWithSite
     {
         private const string namespace_hint = "NamespaceHint";
+
+        private const string TEMPLATE_NAMESPACE = "SubSonic.Core.Templating";
+        private const string TEMPLATE_CLASS = "SubSonicTemplate";
+        private const string ERROR_OUTPUT = "ErrorGeneratingOutput";
 
         protected TextTemplatingCallback callback = new TextTemplatingCallback();
 
@@ -147,22 +153,22 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 {
                     if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\System.Core")))
                     {
-                        host.StandardAssemblyReferences.Add(host.ResolveAssemblyReference("System.Core"));
+                        host.StandardAssemblyReferences.Add("System.Core");
                     }
 
                     if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\System.Data")))
                     {
-                        host.StandardAssemblyReferences.Add(host.ResolveAssemblyReference("System.Data"));
+                        host.StandardAssemblyReferences.Add("System.Data");
                     }
 
                     if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\System.Data.Common")))
                     {
-                        host.StandardAssemblyReferences.Add(host.ResolveAssemblyReference("System.Data.Common"));
+                        host.StandardAssemblyReferences.Add("System.Data.Common");
                     }
 
                     if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\SubSonic.Core.DataAccessLayer")))
                     {
-                        host.StandardAssemblyReferences.Add(host.ResolveAssemblyReference("SubSonic.Core.DataAccessLayer"));
+                        host.StandardAssemblyReferences.Add("SubSonic.Core.DataAccessLayer");
                     }
 
                     if (!host.StandardImports.Any(x => x.Equals("SubSonic", StringComparison.OrdinalIgnoreCase)))
@@ -231,6 +237,33 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
         protected virtual string ProcessTemplate(string inputFileName, string inputFileContent, ITextTemplating processor, IVsHierarchy hierarchy)
         {
+            string content = processor.PreprocessTemplate(inputFileName, inputFileContent, callback, TEMPLATE_CLASS, base.FileNamespace, out string[] references);
+
+            if (callback.Errors)
+            {
+                return ERROR_OUTPUT;
+            }
+
+            if (processor is ITextTemplatingEngineHost host)
+            {
+                Regex netstandard = new Regex("(netstandard)([1-9].[0-9])", RegexOptions.Compiled | RegexOptions.Singleline);
+
+                string pathToNetStandard = null;
+
+                for (int i = 0, n = references.Length; i < n; i++)
+                {
+                    references[i] = host.ResolveAssemblyReference(references[i]);
+
+                    // if a netstandard assembly is added we need to include the netstandard assembly
+                    if (netstandard.IsMatch(references[i]))
+                    {   // we need to make sure to include the netstandard dll
+                        Match match = netstandard.Match(references[i]);
+
+                        pathToNetStandard = host.ResolveAssemblyReference(string.Format(CultureInfo.InvariantCulture, "netstandard, Version={0}.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51", match.Groups[2].Value));
+                    }
+                }
+            }
+
             return processor.ProcessTemplate(inputFileName, inputFileContent, callback, hierarchy);
         }
 

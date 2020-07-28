@@ -172,41 +172,45 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
+            Regex 
+                assemblyRegex = new Regex("([A-z|.]*), Version=([0-9|.]*), Culture=([A-z]*), PublicKeyToken=([A-z|0-9]*)", RegexOptions.Compiled | RegexOptions.Singleline);
+
             string path = EngineHost.ResolveAssemblyReference(assemblyReference);
 
-            if (path.Equals(assemblyReference, StringComparison.Ordinal) &&
-                !foundAssembly.IsMatch(path))
-            {   // failed to find the assembly, could it be referenced via a project reference?
+            // if not found look at the project references
+            if (!foundAssembly.IsMatch(path))
+            {
+                // second check the project references
                 if (GetService(typeof(DTE)) is DTE dTE)
                 {
                     foreach (Project project in dTE.Solution.Projects)
                     {
                         if (project.Object is VSProject vsProject)
                         {
-                            path = ResolveAssemblyReferenceByProject(assemblyReference, vsProject.References);
+                            path = ResolveAssemblyReferenceByProject(assemblyReference, vsProject.References, assemblyRegex.Match(assemblyReference));
                         }
                         else if (project.Object is VsWebSite.VSWebSite vsWebSite)
                         {
-                            path = ResolveAssemblyReferenceByProject(assemblyReference, vsWebSite.References);
+                            path = ResolveAssemblyReferenceByProject(assemblyReference, vsWebSite.References, assemblyRegex.Match(assemblyReference));
                         }
                     }
-                }
-
-                if (!foundAssembly.IsMatch(path))
-                {
-                    LogError(false, SubSonicCoreErrors.FileNotFound, -1, -1, $"{assemblyReference}.dll");
                 }
             }
 
             return path;
         }
 
-        private string ResolveAssemblyReferenceByProject(string assemblyReference, References references)
+        private string ResolveAssemblyReferenceByProject(string assemblyReference, References references, Match assembly)
         {
             foreach (Reference reference in references)
             {
-                if (reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
+                if (!assembly.Success && reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
                 {   // found the reference
+                    return reference.Path;
+                }
+                else if (reference.Name.Equals(assembly.Groups[1].Value, StringComparison.OrdinalIgnoreCase) &&
+                         Version.Parse(reference.Version) >= Version.Parse(assembly.Groups[2].Value))
+                {
                     return reference.Path;
                 }
             }
@@ -214,12 +218,16 @@ namespace SubSonic.Core.VisualStudio.Services
             return assemblyReference;
         }
 
-        private string ResolveAssemblyReferenceByProject(string assemblyReference, VsWebSite.AssemblyReferences references)
+        private string ResolveAssemblyReferenceByProject(string assemblyReference, VsWebSite.AssemblyReferences references, Match assembly)
         {
             foreach (VsWebSite.AssemblyReference reference in references)
             {
-                if (reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
+                if (!assembly.Success && reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
                 {   // found the reference
+                    return reference.FullPath;
+                }
+                else if (reference.StrongName.Equals(assembly.Groups[0].Value, StringComparison.OrdinalIgnoreCase))
+                {
                     return reference.FullPath;
                 }
             }

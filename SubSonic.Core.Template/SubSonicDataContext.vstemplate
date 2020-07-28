@@ -32,7 +32,7 @@
 	<WizardData>
 		<packages repository="extension" repositoryId="SubSonic.Core.VisualStudio.d0e28cfc-1997-48b5-bff3-b1c24fc847ba">
 			<package id="Microsoft.Extensions.DependencyInjection.Abstractions" version="3.1.6" />
-			<package id="SubSonic.Core.DAL" version="4.2.1" />
+			<package id="SubSonic.Core.DAL" version="4.3.0-alpha.1" />
 			<package id="SubSonic.Extensions.SqlServer" version="4.2.1" />
 		</packages>
 	</WizardData>

@@ -204,7 +204,55 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public string PreprocessTemplate(string inputFile, string content, ITextTemplatingCallback callback, string className, string classNamespace, out string[] references)
         {
-            return templating.PreprocessTemplate(inputFile, content, callback, className, classNamespace, out references);
+            string result = null;
+
+            references = Array.Empty<string>();
+
+            if (this is ITextTemplatingComponents SubSonicComponents)
+            {
+                SubSonicComponents.Callback = callback;
+                SubSonicComponents.InputFile = inputFile;
+
+                LastInvocationRaisedErrors = false;
+
+                result = SubSonicComponents.Engine.PreprocessTemplate(content, SubSonicComponents.Host, className, classNamespace, out string language, out references);
+
+                if (language.Equals("CSharp", StringComparison.OrdinalIgnoreCase))
+                {
+                    SubSonicComponents.Host.SetFileExtension(".cs");
+                }
+                else if (language.Equals("VB", StringComparison.OrdinalIgnoreCase))
+                {
+                    SubSonicComponents.Host.SetFileExtension(".vb");
+                }
+                else
+                {
+                    SubSonicComponents.Host.SetFileExtension(DetectExtensionDirective(content));
+                }
+            }
+
+            return result;
+        }
+
+        private string DetectExtensionDirective(string inputFileContent)
+        {
+            string extension = null;
+
+            Match m = Regex.Match(inputFileContent,
+               @"<#@\s*output(?:\s+encoding=""[.a-z0-9- ]*"")?(?:\s+extension=""([.a-z0-9- ]*)"")?(?:\s+encoding=""[.a-z0-9- ]*"")?\s*#>",
+               RegexOptions.IgnoreCase);
+
+            if (m.Success && m.Groups[1].Success)
+            {
+                extension = m.Groups[1].Value;
+
+                if (extension != "" && !extension.StartsWith("."))
+                {
+                    extension = "." + extension;
+                }
+            }
+
+            return extension;
         }
 
         public void BeginErrorSession()

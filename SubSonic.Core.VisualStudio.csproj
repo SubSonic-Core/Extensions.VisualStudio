@@ -134,10 +134,8 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="SubSonic.Core.VisualStudio.Common\SubSonic.Core.VisualStudio.Common.csproj">
-      <Project>{8b989768-6efb-4172-b3ad-931d17ed0078}</Project>
+      <Project>{13fa659b-4b59-4304-a0fe-d0a2f5c4eb30}</Project>
       <Name>SubSonic.Core.VisualStudio.Common</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
