@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.Data.Services;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
+using Mono.TextTemplating;
 using Mono.VisualStudio.TextTemplating;
 using SubSonic.Core.VisualStudio.Common;
 using SubSonic.Core.VisualStudio.Templating;
@@ -145,7 +146,24 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public object GetHostOption(string optionName)
         {
-            throw new NotImplementedException();
+            if (optionName.Equals(nameof(TemplateSettings.CachedTemplates), StringComparison.OrdinalIgnoreCase))
+            {
+                return package.HostOptions.CachedTemplates;
+            }
+            else if (optionName.Equals(nameof(TemplateSettings.CompilerOptions), StringComparison.OrdinalIgnoreCase))
+            {
+                return package.HostOptions.CompilerOptions;
+            }
+            else if (optionName.Equals(nameof(TemplateSettings.NoLinePragmas), StringComparison.OrdinalIgnoreCase))
+            {
+                return package.HostOptions.NoLinePragmas;
+            }
+            else if (optionName.Equals(nameof(TemplateSettings.RelativeLinePragmas), StringComparison.OrdinalIgnoreCase))
+            {
+                return package.HostOptions.RelativeLinePragmas;
+            }
+
+            return null;
         }
 
         public bool LoadIncludeText(string requestFileName, out string content, out string location)
@@ -157,7 +175,9 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             foreach(CompilerError error in errors)
             {
+#pragma warning disable VSTHRD010
                 LogError(error.IsWarning, error.ErrorText, error.Line, error.Column, error.FileName);
+#pragma warning restore VSTHRD010
             }
         }
 

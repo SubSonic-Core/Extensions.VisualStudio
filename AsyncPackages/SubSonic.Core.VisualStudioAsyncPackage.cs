@@ -53,6 +53,7 @@ namespace SubSonic.Core.VisualStudio
     [ProvideCodeGeneratorExtension(nameof(SubSonicTemplatingFileGenerator), ".stt", ProjectSystem = "{E24C65DC-7377-472b-9ABA-BC803B73C61A}", ProjectSystemPackage = "{39c9c826-8ef8-4079-8c95-428f5b1c323f}")]
     [Guid(PackageGuidString)]
     [ProvideOptionPage(typeof(SecurityOptionPageGrid), SubSonicCoreCategory, SecurityOptionPageGrid.SecurityPageName, 100, 101, true)]
+    [ProvideOptionPage(typeof(TemplatingHostOptionsPageGrid), SubSonicCoreCategory, TemplatingHostOptionsPageGrid.HostOptionsPageName, 100, 102, true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     public sealed class SubSonicCoreVisualStudioAsyncPackage 
         : AsyncPackage
@@ -94,6 +95,22 @@ namespace SubSonic.Core.VisualStudio
                 }
 
                 return security;
+            }
+        }
+
+        private TemplatingHostOptionsPageGrid optionsPageGrid;
+
+        internal TemplatingHostOptionsPageGrid HostOptions
+        {
+            get
+            {
+                if (optionsPageGrid is null &&
+                        GetDialogPage(typeof(TemplatingHostOptionsPageGrid)) is TemplatingHostOptionsPageGrid xoptionsPageGrid)
+                {
+                    optionsPageGrid = xoptionsPageGrid;
+                }
+
+                return optionsPageGrid;
             }
         }
 

@@ -29,62 +29,67 @@ namespace SubSonic.Core.VisualStudio.Common
         {
             string location = strongName ?? throw new ArgumentNullException(nameof(strongName));
 
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT && IsStrongName(strongName))
+            if (IsStrongName(strongName))
             {
-                IAssemblyCache cache;
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    IAssemblyCache cache;
 
-                AssemblyName name = null;
-                try
-                {
-                    name = new AssemblyName(strongName);
-                }
-                catch(FileLoadException)
-                {
-                    return location;
-                }
-
-                if (!Win32NTMethods.Failed(Win32NTMethods.CreateAssemblyCache(out cache, 0)) && (cache != null))
-                {
+                    AssemblyName name = null;
                     try
                     {
-                        if (name.ProcessorArchitecture != ProcessorArchitecture.None)
-                        {
-                            location = GetLocationImpl(cache, strongName, null);
-                        }
-                        else
-                        {
-                            string targetProcessorArchitecture = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
-                            if (!string.IsNullOrEmpty(targetProcessorArchitecture))
-                            {
-                                location = GetLocationImpl(cache, strongName, targetProcessorArchitecture);
-                            }
-                            if (string.IsNullOrEmpty(location))
-                            {   // let's try the MSIL Architecture
-                                location = GetLocationImpl(cache, strongName, "MSIL");
+                        name = new AssemblyName(strongName);
+                    }
+                    catch (FileLoadException)
+                    {
+                        return location;
+                    }
 
-                                if ((location == null) || (location.Length <= 0))
+                    if (!Win32NTMethods.Failed(Win32NTMethods.CreateAssemblyCache(out cache, 0)) && (cache != null))
+                    {
+                        try
+                        {
+                            if (name.ProcessorArchitecture != ProcessorArchitecture.None)
+                            {
+                                location = GetLocationImpl(cache, strongName, null);
+                            }
+                            else
+                            {
+                                string targetProcessorArchitecture = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
+                                if (!string.IsNullOrEmpty(targetProcessorArchitecture))
                                 {
-                                    location = GetLocationImpl(cache, strongName, null);
+                                    location = GetLocationImpl(cache, strongName, targetProcessorArchitecture);
+                                }
+                                if (string.IsNullOrEmpty(location))
+                                {   // let's try the MSIL Architecture
+                                    location = GetLocationImpl(cache, strongName, "MSIL");
+
+                                    if ((location == null) || (location.Length <= 0))
+                                    {
+                                        location = GetLocationImpl(cache, strongName, null);
+                                    }
                                 }
                             }
                         }
+                        finally
+                        {
+                            Marshal.FinalReleaseComObject(cache);
+                        }
                     }
-                    finally
+                    else
                     {
-                        Marshal.FinalReleaseComObject(cache);
+                        if (string.IsNullOrWhiteSpace(location) && string.Equals(Path.GetExtension(strongName), ".dll", StringComparison.OrdinalIgnoreCase))
+                        {
+                            location = GetLocation(Path.ChangeExtension(strongName, null));
+                        }
                     }
+
+                    return location;
                 }
                 else
                 {
-                    if (string.IsNullOrWhiteSpace(location) && string.Equals(Path.GetExtension(strongName), ".dll", StringComparison.OrdinalIgnoreCase))
-                    {
-                        location = GetLocation(Path.ChangeExtension(strongName, null));
-                    }
+                    throw new PlatformNotSupportedException();
                 }
-            }
-            else if (Environment.OSVersion.Platform == PlatformID.Unix && IsStrongName(strongName))
-            {
-                throw new PlatformNotSupportedException();
             }
 
             return location;
@@ -101,7 +106,7 @@ namespace SubSonic.Core.VisualStudio.Common
             {
                 strongName = strongName + ", ProcessorArchitecture=" + targetProcessorArchitecture;
             }
-            int hr = assemblyCache.QueryAssemblyInfo(3, strongName, ref pAsmInfo);
+            int hr = assemblyCache.QueryAssemblyInfo((uint)AssemblyCacheEnum.QUERYASMINFO_FLAG_VALIDATE, strongName, ref pAsmInfo);
             if ((Win32NTMethods.Failed(hr) && (hr != Win32NTMethods.E_INSUFFICIENT_BUFFER)) || (pAsmInfo.cbAssemblyInfo == 0))
             {
                 return string.Empty;
