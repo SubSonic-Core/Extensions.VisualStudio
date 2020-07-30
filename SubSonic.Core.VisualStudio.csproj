@@ -55,7 +55,7 @@
     <Compile Include="AsyncPackages\Commands\SubSonicCommandIDS.cs" />
     <Compile Include="AsyncPackages\Commands\SubSonicTemplatingDebugCommand.cs" />
     <Compile Include="Attributes\ProvideAssemblyObjectAttribute.cs" />
-    <Compile Include="CustomTools\SubSonicTemplatingFileGenerator\TextTemplating.cs" />
+    <Compile Include="CustomTools\SubSonicTemplatingFileGenerator\TextTemplatingGenerator.cs" />
     <Compile Include="Extensions\AsyncServiceProvider.cs" />
     <Compile Include="Extensions\Strings.cs" />
     <Compile Include="Forms\SecurityOptionPageGrid.cs">
@@ -76,7 +76,6 @@
     </Compile>
     <Compile Include="Services\SubSonicTemplatingService\SubSonicTemplatingService.cs" />
     <Compile Include="Services\SubSonicTemplatingService\TextTemplating.cs" />
-    <Compile Include="Services\SubSonicTemplatingService\TextTemplatingOrchestrator.cs" />
     <Compile Include="Services\SubSonicTemplatingService\TextTemplatingSessionHost.cs" />
     <Compile Include="AsyncPackages\SubSonic.Core.VisualStudioAsyncPackage.cs" />
     <Compile Include="SubSonicCoreErrors.Designer.cs">
@@ -92,6 +91,7 @@
     <Compile Include="Templating\SqmFacade.cs" />
     <Compile Include="Templating\SubSonicDataConnection.cs" />
     <Compile Include="Templating\SubSonicConnectionManager.cs" />
+    <Compile Include="Utilities\PathUtilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.config">
@@ -121,8 +121,13 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
       <Version>3.1.6</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="16.0.205" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="16.0.206" ExcludeAssets="runtime">
+      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="16.6.2058" />
+    <PackageReference Include="Mono.TextTemplating">
+      <Version>2.2.0-preview-0030-ge7e7a3b32e</Version>
+    </PackageReference>
     <PackageReference Include="System.ComponentModel.Composition">
       <Version>4.7.0</Version>
     </PackageReference>

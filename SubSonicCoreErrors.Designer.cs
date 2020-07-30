@@ -61,6 +61,15 @@ namespace SubSonic.Core.VisualStudio {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Assembly reference failed, {0}..
+        /// </summary>
+        internal static string AssemblyReferenceFailed {
+            get {
+                return ResourceManager.GetString("AssemblyReferenceFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Debugging multiple templates is not allowed..
         /// </summary>
         internal static string CannotDebugMultipleTemplates {
@@ -129,6 +138,15 @@ namespace SubSonic.Core.VisualStudio {
         internal static string MissingConnectionKey {
             get {
                 return ResourceManager.GetString("MissingConnectionKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Path not found: &quot;{0}&quot;.
+        /// </summary>
+        internal static string PathNotFound {
+            get {
+                return ResourceManager.GetString("PathNotFound", resourceCulture);
             }
         }
         

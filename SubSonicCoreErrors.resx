@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AssemblyReferenceFailed" xml:space="preserve">
+    <value>Assembly reference failed, {0}.</value>
+  </data>
   <data name="CannotDebugMultipleTemplates" xml:space="preserve">
     <value>Debugging multiple templates is not allowed.</value>
   </data>
@@ -140,6 +143,9 @@
   </data>
   <data name="MissingConnectionKey" xml:space="preserve">
     <value>{0} was not found in the connection manager.</value>
+  </data>
+  <data name="PathNotFound" xml:space="preserve">
+    <value>Path not found: "{0}"</value>
   </data>
   <data name="RegisterIpcChannelFailed" xml:space="preserve">
     <value>Failed to register ipc channel: {0}</value>

@@ -2,8 +2,8 @@
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
-using Microsoft.VisualStudio.TextTemplating;
-using Microsoft.VisualStudio.TextTemplating.VSHost;
+using Mono.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating.VSHost;
 using Microsoft.Win32;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
@@ -277,8 +277,6 @@ namespace SubSonic.Core.VisualStudio.Services
                 }
             }
             errorSessionDepth++;
-
-            DebugTemplating.BeginErrorSession();
         }
 
         public bool EndErrorSession()
@@ -296,9 +294,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 transformationSessionImplicitlyCreated = false;
             }
 
-            bool result = DebugTemplating.EndErrorSession();
-
-            return ((currentErrors?.Count ?? 0) > 0) || result;
+            return ((currentErrors?.Count ?? 0) > 0);
         }
         #endregion
 
@@ -316,6 +312,13 @@ namespace SubSonic.Core.VisualStudio.Services
                 flag = string.Equals(matchs[0].Groups["pvalue"].Value, language, StringComparison.OrdinalIgnoreCase);
             }
             return flag;
+        }
+
+        private void LogError(string message, bool isWarning = false)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            LogError(isWarning, message, -1, -1, InputFile);
         }
 
         private void LogError(bool isWarning, string message, int line, int column, string fileName)
@@ -399,7 +402,7 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 try
                 {
-                    TransformationRunFactory.RegisterIpcChannel();
+                    throw new NotImplementedException();
                     isChannelRegistered = true;
                 }
                 catch(Exception ex)
@@ -492,9 +495,15 @@ namespace SubSonic.Core.VisualStudio.Services
 
 
 
+
 #pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
-                    uiDispatcher.BeginInvoke((Action) (() => FinishTransformation(filename, result)), DispatcherPriority.Normal);
+                    uiDispatcher.BeginInvoke((Action) (() => {
+#pragma warning disable VSTHRD010 // Avoid legacy thread switching APIs
+                        FinishTransformation(filename, result);
+#pragma warning restore VSTHRD010 // Avoid legacy thread switching APIs
+                    }), DispatcherPriority.Normal);
 #pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
+
                 }
             }
         }

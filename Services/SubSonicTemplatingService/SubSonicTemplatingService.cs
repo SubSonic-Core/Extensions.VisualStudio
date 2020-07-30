@@ -2,23 +2,27 @@
 using Microsoft.VisualStudio.Data.Services;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.TextTemplating;
-using Microsoft.VisualStudio.TextTemplating.VSHost;
 using Microsoft.VisualStudio.Threading;
+using Mono.VisualStudio.TextTemplating;
+using SubSonic.Core.VisualStudio.Common;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
 using System.CodeDom.Compiler;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Lifetime;
+using System.Security;
+using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using VSLangProj;
 using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
 
@@ -27,9 +31,7 @@ namespace SubSonic.Core.VisualStudio.Services
     public sealed partial class SubSonicTemplatingService
         : MarshalByRefObject
         , SSubSonicTemplatingService
-        , ISubSonicTemplatingService
-        , ITextTemplatingComponents
-        , ITextTemplatingEngineHost
+        , ITextTemplatingService
         , IServiceProvider
         , IDisposable
     {
@@ -51,6 +53,7 @@ namespace SubSonic.Core.VisualStudio.Services
             this.package = package ?? throw new ArgumentNullException(nameof(package));
             this.errorListProvider = new ErrorListProvider(package);
             this.errorListProvider.MaintainInitialTaskOrder = true;
+            this.Engine = new Mono.TextTemplating.TemplatingEngine();
 
             package.DTE.Events.SolutionEvents.AfterClosing += SolutionEvents_AfterClosing;
         }
@@ -67,11 +70,7 @@ namespace SubSonic.Core.VisualStudio.Services
             await TaskScheduler.Default;
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-            //IVsShell shell = await serviceProvider.GetServiceAsync<SVsShell, IVsShell>();
-
-            this.templating = await AsyncServiceProvider.GetServiceAsync<STextTemplating, ITextTemplating>();
-
-            if (GetService(typeof(EnvDTE.DTE)) is EnvDTE.DTE dte)
+            if (GetService(typeof(DTE)) is DTE dte)
             {
                 SqmFacade.Initialize(dte);
             }
@@ -101,29 +100,25 @@ namespace SubSonic.Core.VisualStudio.Services
         }
         #endregion
 
-        private ITextTemplating templating;
         private bool disposedValue;
-
-        
-
-        private ITextTemplatingComponents Components => this.templating as ITextTemplatingComponents;
-
-        private ITextTemplatingEngineHost EngineHost => this.templating as ITextTemplatingEngineHost;
-
-        private IDebugTextTemplating DebugTemplating => this.templating as IDebugTextTemplating;
 
         #region ITextTemplatingEngineHost
         public IList<string> StandardAssemblyReferences
         {
             get
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
+
                 if (!standardAssemblyReferences.Any())
                 {
-                    standardAssemblyReferences.AddRange(EngineHost.StandardAssemblyReferences
-                    .Union(new[]
+                    standardAssemblyReferences.AddRange(new[]
                     {
-                        ResolveAssemblyReference(typeof(IDataConnection).Assembly.GetName().Name)
-                    }).Distinct());
+                        ResolveAssemblyReference("System"),
+                        ResolveAssemblyReference("System.Core"),
+                        typeof(DependencyObject).Assembly.Location,
+                        typeof(IDataConnection).Assembly.Location,
+                        base.GetType().Assembly.Location
+                    }.Distinct());
                 }
                 return standardAssemblyReferences;
             }
@@ -135,69 +130,144 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 if (!standardImports.Any())
                 {
-                    standardImports.AddRange(EngineHost.StandardImports
-                    .Union(new[]
+                    standardImports.AddRange(new[]
                     {
+                        "System",
                         typeof(IDataConnection).Namespace,
-                        "Microsoft.VisualStudio.TextTemplating"
-                    }).Distinct());
+                        "Mono.VisualStudio.TextTemplating"
+                    }.Distinct());
                 }
                 return standardImports;
             }
         }
 
-        public string TemplateFile => EngineHost.TemplateFile;
+        public string TemplateFile { get; set; }
 
         public object GetHostOption(string optionName)
         {
-            return EngineHost.GetHostOption(optionName);
+            throw new NotImplementedException();
         }
 
         public bool LoadIncludeText(string requestFileName, out string content, out string location)
         {
-            return EngineHost.LoadIncludeText(requestFileName, out content, out location);
+            throw new NotImplementedException();
         }
 
         public void LogErrors(CompilerErrorCollection errors)
         {
-            EngineHost.LogErrors(errors);
+            foreach(CompilerError error in errors)
+            {
+                LogError(error.IsWarning, error.ErrorText, error.Line, error.Column, error.FileName);
+            }
         }
 
+        // app domain is not trully supported going forward
         public AppDomain ProvideTemplatingAppDomain(string content)
         {
-            return transformDomain ?? (transformDomain = EngineHost.ProvideTemplatingAppDomain(content));
+            return AppDomain.CurrentDomain;
         }
 
         public string ResolveAssemblyReference(string assemblyReference)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            Regex 
-                assemblyRegex = new Regex("([A-z|.]*), Version=([0-9|.]*), Culture=([A-z]*), PublicKeyToken=([A-z|0-9]*)", RegexOptions.Compiled | RegexOptions.Singleline);
+            string path = assemblyReference;
 
-            string path = EngineHost.ResolveAssemblyReference(assemblyReference);
-
-            // if not found look at the project references
-            if (!foundAssembly.IsMatch(path))
+            if (!string.IsNullOrWhiteSpace(assemblyReference))
             {
-                // second check the project references
-                if (GetService(typeof(DTE)) is DTE dTE)
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
-                    foreach (Project project in dTE.Solution.Projects)
+                    assemblyReference = await ExpandAllVariablesAsync(assemblyReference);
+                });
+
+                if (Path.IsPathRooted(assemblyReference))
+                {   // assembly reference is path rooted
+                    Zone zone = Zone.CreateFromUrl(new Uri(assemblyReference).AbsoluteUri);
+                    if (zone.SecurityZone == SecurityZone.Trusted || zone.SecurityZone == SecurityZone.MyComputer)
                     {
-                        if (project.Object is VSProject vsProject)
+                        path = assemblyReference;
+                    }
+                    else
+                    {
+                        string fileNotFound = string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.FileNotFound, assemblyReference);
+                        LogError(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.AssemblyReferenceFailed, fileNotFound));
+                    }
+                }
+
+                // we have not found a thing let's look at the GAC
+                if (!foundAssembly.IsMatch(path))
+                {
+                    path = GlobalAssemblyCacheHelper.GetLocation(assemblyReference);
+                }
+
+                // still have not found anything let's check the public assemblies folder
+                if (!foundAssembly.IsMatch(path))
+                {
+                    string extension = Path.GetExtension(assemblyReference);
+
+                    bool executable = extension.Equals(".dll", StringComparison.OrdinalIgnoreCase) || extension.Equals(".exe", StringComparison.OrdinalIgnoreCase);
+
+                    if (SubSonicCoreVisualStudioAsyncPackage.Singleton != null)
+                    {
+                        string vSinstallDir = GetVSInstallDir(SubSonicCoreVisualStudioAsyncPackage.Singleton.ApplicationRegistryRoot);
+                        if (!string.IsNullOrEmpty(vSinstallDir))
                         {
-                            path = ResolveAssemblyReferenceByProject(assemblyReference, vsProject.References, assemblyRegex.Match(assemblyReference));
+                            string code_base = Path.Combine(Path.Combine(vSinstallDir, "PublicAssemblies"), assemblyReference);
+
+                            if (File.Exists(code_base))
+                            {
+                                path = code_base;
+                            }
+                            if (!executable)
+                            {
+                                code_base = $"{code_base}.dll";
+                                if (File.Exists(code_base))
+                                {
+                                    path = code_base;
+                                }
+                            }
                         }
-                        else if (project.Object is VsWebSite.VSWebSite vsWebSite)
+                    }
+                }
+
+                // if not found look at the project references
+                if (!foundAssembly.IsMatch(path))
+                {
+                    // not sure if this willl be a problem, I worry about reference only assemblies.
+                    // maybe ensure that the reference is from the nuget package and is a real boy.
+                    // second check the project references
+                    if (GetService(typeof(DTE)) is DTE dTE)
+                    {
+                        foreach (Project project in dTE.Solution.Projects)
                         {
-                            path = ResolveAssemblyReferenceByProject(assemblyReference, vsWebSite.References, assemblyRegex.Match(assemblyReference));
+                            if (project.Object is VSProject vsProject)
+                            {
+                                path = ResolveAssemblyReferenceByProject(assemblyReference, vsProject.References, GlobalAssemblyCacheHelper.strongNameRegEx.Match(assemblyReference));
+                            }
+                            else if (project.Object is VsWebSite.VSWebSite vsWebSite)
+                            {
+                                path = ResolveAssemblyReferenceByProject(assemblyReference, vsWebSite.References, GlobalAssemblyCacheHelper.strongNameRegEx.Match(assemblyReference));
+                            }
                         }
                     }
                 }
             }
 
             return path;
+        }
+
+        private async Task<string> ExpandAllVariablesAsync(string input)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            if (!string.IsNullOrWhiteSpace(input))
+            {
+                input = Environment.ExpandEnvironmentVariables(input);
+                input = await Utilities.PathHelper.ExpandVsMacroVariablesAsync(input, VsHierarchy);
+                input = await Utilities.PathHelper.ExpandProjectPropertiesAsync(input, VsHierarchy, this);
+            }
+
+            return input;
         }
 
         private string ResolveAssemblyReferenceByProject(string assemblyReference, References references, Match assembly)
@@ -208,8 +278,8 @@ namespace SubSonic.Core.VisualStudio.Services
                 {   // found the reference
                     return reference.Path;
                 }
-                else if (reference.Name.Equals(assembly.Groups[1].Value, StringComparison.OrdinalIgnoreCase) &&
-                         Version.Parse(reference.Version) >= Version.Parse(assembly.Groups[2].Value))
+                else if (reference.Name.Equals(assembly.Groups["name"].Value, StringComparison.OrdinalIgnoreCase) &&
+                         Version.Parse(reference.Version) >= Version.Parse(assembly.Groups["version"].Value))
                 {
                     return reference.Path;
                 }
@@ -226,7 +296,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 {   // found the reference
                     return reference.FullPath;
                 }
-                else if (reference.StrongName.Equals(assembly.Groups[0].Value, StringComparison.OrdinalIgnoreCase))
+                else if (reference.StrongName.Equals(assembly.Groups["name"].Value, StringComparison.OrdinalIgnoreCase))
                 {
                     return reference.FullPath;
                 }
@@ -237,17 +307,17 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public Type ResolveDirectiveProcessor(string processorName)
         {
-            return EngineHost.ResolveDirectiveProcessor(processorName);
+            throw new NotImplementedException();
         }
 
         public string ResolveParameterValue(string directiveId, string processorName, string parameterName)
         {
-            return EngineHost.ResolveParameterValue(directiveId, processorName, parameterName);
+            throw new NotImplementedException();
         }
 
         public string ResolvePath(string path)
         {
-            return EngineHost.ResolvePath(path);
+            throw new NotImplementedException();
         }
 
         public void SetFileExtension(string extension)
@@ -332,11 +402,11 @@ namespace SubSonic.Core.VisualStudio.Services
         #region ITextTemplatingComponents
         public ITextTemplatingEngineHost Host => this;
 
-        public ITextTemplatingEngine Engine => Components.Engine;
-
-        public string InputFile { get => Components.InputFile; set => Components.InputFile = value; }
-        public ITextTemplatingCallback Callback { get => Components.Callback; set => Components.Callback = value; }
-        public object Hierarchy { get => Components.Hierarchy; set => Components.Hierarchy = value; }
+        public IDebugTextTemplatingEngine Engine { get; }
+        ITextTemplatingEngine ITextTemplatingComponents.Engine => Engine;
+        public string InputFile { get; set; }
+        public ITextTemplatingCallback Callback { get; set; }
+        public object Hierarchy { get; set; }
 
         private IVsHierarchy VsHierarchy
         {
@@ -344,31 +414,24 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
 
-                return Components.Hierarchy as IVsHierarchy;
+                return Hierarchy as IVsHierarchy;
             }
         }
         #endregion
 
+        #region ITextTemplatingSessionHost
+        
+        #endregion
         public object GetService(Type serviceType)
         {
             object result = null;
 
-            if (serviceType == typeof(ISubSonicTemplatingService))
+            if (serviceType.IsAssignableFrom(GetType()))
             {
                 return this;
             }
             else
             {
-                if (templating is IServiceProvider service)
-                {
-                    result = service.GetService(serviceType);
-
-                    if (result != null)
-                    {
-                        return result;
-                    }
-                }
-
                 ThreadHelper.JoinableTaskFactory.Run(async delegate
                 {
                     result = await AsyncServiceProvider.GetServiceAsync(serviceType);

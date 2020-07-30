@@ -3,14 +3,13 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.TextTemplating.VSHost;
+using Mono.VisualStudio.TextTemplating.VSHost;
 using SubSonic.Core.VisualStudio.AsyncPackages.Commands;
 using SubSonic.Core.VisualStudio.CustomTools;
+using SubSonic.Core.VisualStudio.Forms;
 using SubSonic.Core.VisualStudio.Services;
 using SubSonic.Core.VisualStudio.Templating;
-using SubSonic.Core.VisualStudio.Forms;
 using System;
-using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using System.Diagnostics;
@@ -19,6 +18,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using VSLangProj;
+using ProvideCodeGenerator = Microsoft.VisualStudio.TextTemplating.VSHost.ProvideCodeGeneratorAttribute;
+using ProvideCodeGeneratorExtension = Microsoft.VisualStudio.TextTemplating.VSHost.ProvideCodeGeneratorExtensionAttribute;
 using Task = System.Threading.Tasks.Task;
 
 namespace SubSonic.Core.VisualStudio

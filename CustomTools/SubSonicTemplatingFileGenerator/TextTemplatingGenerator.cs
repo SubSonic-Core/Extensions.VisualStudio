@@ -1,8 +1,8 @@
 ﻿using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.TextTemplating;
-using Microsoft.VisualStudio.TextTemplating.VSHost;
+using Mono.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating.VSHost;
 using Microsoft.VisualStudio.Threading;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
@@ -14,6 +14,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using BaseCodeGeneratorWithSite = Microsoft.VisualStudio.TextTemplating.VSHost.BaseCodeGeneratorWithSite;
 
 namespace SubSonic.Core.VisualStudio.CustomTools
 {
@@ -28,7 +29,7 @@ namespace SubSonic.Core.VisualStudio.CustomTools
         private const string TEMPLATE_CLASS = "SubSonicTemplate";
         private const string ERROR_OUTPUT = "ErrorGeneratingOutput";
 
-        protected TextTemplatingCallback callback = new TextTemplatingCallback();
+        protected ITextTemplatingCallback callback = new TextTemplatingCallback();
 
         SubSonicCoreVisualStudioAsyncPackage Package => SubSonicCoreVisualStudioAsyncPackage.Singleton;
 
@@ -62,7 +63,7 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                     return Array.Empty<byte>();
                 }
                 base.SetWaitCursor();
-                callback.Initialize();
+                callback = new TextTemplatingCallback();
                 ITextTemplating processor = TextTemplating;
                 CallContext.LogicalSetData(namespace_hint, base.FileNamespace);
 
@@ -103,7 +104,7 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 }
             }
 
-            callback.OutputEncoding = EncodingHelper.GetEncoding(inputFileName) ?? Encoding.UTF8;
+            callback.SetOutputEncoding(EncodingHelper.GetEncoding(inputFileName) ?? Encoding.UTF8, false);
 
             result = result.TrimStart(Environment.NewLine.ToCharArray());
 
@@ -151,11 +152,6 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
                 if (processor is ITextTemplatingEngineHost host)
                 {
-                    if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\System.Core")))
-                    {
-                        host.StandardAssemblyReferences.Add("System.Core");
-                    }
-
                     if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\System.Data")))
                     {
                         host.StandardAssemblyReferences.Add("System.Data");
