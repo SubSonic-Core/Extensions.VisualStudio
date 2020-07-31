@@ -343,9 +343,9 @@ namespace SubSonic.Core.VisualStudio.Services
                     IVsHierarchy hierarchy = null;
                     ProjectItem item = null;
 
-                    if (package.DTE.Solution != null)
+                    if (package.DTE.Solution != null && fileName.IsNotNullOrEmpty())
                     {
-                        item = package.DTE.Solution.FindProjectItem(fileName);
+                        item = package.DTE.Solution.FindProjectItem(Path.GetFileName(fileName));
                     }
 
                     if ((item != null) && item.ContainingProject != null)
@@ -356,7 +356,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     ErrorTask task = new ErrorTask()
                     {
                         Category = TaskCategory.BuildCompile,
-                        Document = fileName,
+                        Document = item?.FileNames[0] ?? fileName,
                         HierarchyItem = hierarchy,
                         CanDelete = false,
                         Column = column,

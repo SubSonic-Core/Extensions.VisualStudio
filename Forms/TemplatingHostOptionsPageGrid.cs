@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.Shell;
+using Mono.TextTemplating.CodeCompilation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -30,18 +31,29 @@ namespace SubSonic.Core.VisualStudio.Forms
 
         [Category(Package.SubSonicCoreCategory)]
         [DisplayName("Compiler Options")]
-        [Description("TODO:: Set Description")]
+        [Description("Additional Roslyn compiler options.")]
         public string CompilerOptions
         {
             get => compilerOptions;
             set => compilerOptions = value;
         }
 
+        private RuntimeKind runtimeKind = RuntimeKind.Default;
+
+        [Category(Package.SubSonicCoreCategory)]
+        [DisplayName("Roslyn Runtime")]
+        [Description("Indicates which Roslyn runtime to use.")]
+        public RuntimeKind RuntimeKind
+        {
+            get => runtimeKind;
+            set => runtimeKind = value;
+        }
+
         private bool linePragmas = true;
 
         [Category(Package.SubSonicCoreCategory)]
         [DisplayName("Line Pragmas")]
-        [Description("TODO:: Set Description")]
+        [Description("Generate line pragmas.")]
         public bool LinePragmas
         {
             get => linePragmas;

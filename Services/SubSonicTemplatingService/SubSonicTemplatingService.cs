@@ -57,7 +57,7 @@ namespace SubSonic.Core.VisualStudio.Services
         private System.Diagnostics.Process transformProcess;
         private readonly Regex foundAssembly = new Regex(@"[A-Z|a-z]:\\", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 
-        internal BuildInProgressDialog BuildInProgressDialog;
+        internal CancellationTokenSource CancellationTokenSource;
 
         private IList<string> IncludePaths { get; }
         private IList<string> ReferencePaths { get; }
@@ -81,6 +81,7 @@ namespace SubSonic.Core.VisualStudio.Services
             parameters = new Dictionary<ParameterKey, string>();
             directiveProcessors = new Dictionary<string, KeyValuePair<string, string>>();
             subSonicOutput = new SubSonicOutputWriter(this);
+            CancellationTokenSource = new CancellationTokenSource();
 
             package.DTE.Events.SolutionEvents.AfterClosing += SolutionEvents_AfterClosing;
         }
@@ -96,6 +97,8 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             await TaskScheduler.Default;
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+            await subSonicOutput.InitializeAsync("SubSonic Core", cancellationToken);
 
             AddReferencePath(typeof(TextTransformation).Assembly.Location);
             AddReferencePath(typeof(File).Assembly.Location);
@@ -146,6 +149,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     {
                         ResolveAssemblyReference("System"),
                         ResolveAssemblyReference("System.Core"),
+                        typeof(TemplatingEngine).Assembly.Location, // templating dll contains Mono.VisualStudio.TextTemplating
                         typeof(DependencyObject).Assembly.Location,
                         typeof(IDataConnection).Assembly.Location,
                         base.GetType().Assembly.Location
@@ -196,11 +200,15 @@ namespace SubSonic.Core.VisualStudio.Services
             }
             else if (optionName.Equals(nameof(TemplateSettings.Log), StringComparison.OrdinalIgnoreCase))
             {   // supply the engine with a textwriter that can output to the output pane.
-                return subSonicOutput.Initialize();
+                return subSonicOutput.GetOutputTextWriter();
             }
             else if (optionName.Equals(nameof(TemplateSettings.CancellationToken), StringComparison.OrdinalIgnoreCase))
             {
-                return BuildInProgressDialog?.CancellationToken ?? CancellationToken.None;
+                return CancellationTokenSource.Token;
+            }
+            else if (optionName.Equals(nameof(TemplateSettings.RuntimeKind), StringComparison.OrdinalIgnoreCase))
+            {
+                return package.HostOptions.RuntimeKind;
             }
 
             return null;
@@ -642,6 +650,7 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 if (disposing)
                 {
+                    CancellationTokenSource.Cancel(true);
                     package.DTE.Events.SolutionEvents.AfterClosing -= SolutionEvents_AfterClosing;
                     errorListProvider.Dispose();
                     subSonicOutput.Dispose();

@@ -1,16 +1,12 @@
-﻿using EnvDTE;
-using EnvDTE80;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.Shell;
+﻿using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using ThreadHelper = Microsoft.VisualStudio.Shell.ThreadHelper;
 
 namespace SubSonic.Core.VisualStudio.Templating
 {
@@ -18,7 +14,6 @@ namespace SubSonic.Core.VisualStudio.Templating
     public class SubSonicOutputWriter
         : TextWriter
     {
-        private const string title = "SUBSONIC";
         private readonly IServiceProvider provider;
         private Guid guid;
 
@@ -30,29 +25,55 @@ namespace SubSonic.Core.VisualStudio.Templating
             this.guid = GetType().GUID;
         }
 
-        public TextWriter Initialize()
+        public async Task InitializeAsync(string title, CancellationToken cancellationToken)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             if (provider.GetService(typeof(SVsOutputWindow)) is IVsOutputWindow output)
             {
-                if (_output == null &&
-                    output.CreatePane(ref guid, title, Convert.ToInt32(true), Convert.ToInt32(true)) != VSConstants.S_OK)
+                if (output.CreatePane(ref guid, title, Convert.ToInt32(true), Convert.ToInt32(true)) == VSConstants.S_OK)
                 {
-                    return null;
+                    _output = output;
                 }
+            }
+        }
 
-                _output = output;
+        public TextWriter GetOutputTextWriter()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            IVsOutputWindowPane pane;
+
+            if (_output.GetPane(ref guid, out pane) == VSConstants.S_OK)
+            {
+                pane.Clear();
+
+                return this;
             }
 
-            return this;
+            return null;
         }
 
         public override Encoding Encoding => Encoding.UTF8;
 
         public override void Write(string value)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            WriteAsync(value);
+        }
+
+        public override void WriteLine()
+        {
+            WriteLineAsync();
+        }
+
+        public override void WriteLine(string value)
+        {
+            WriteLineAsync(value);
+        }
+
+        public override async System.Threading.Tasks.Task WriteAsync(string value)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             IVsOutputWindowPane pane;
 
@@ -62,9 +83,9 @@ namespace SubSonic.Core.VisualStudio.Templating
             }
         }
 
-        public override void WriteLine()
+        public override async System.Threading.Tasks.Task WriteLineAsync()
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             IVsOutputWindowPane pane;
 
@@ -74,9 +95,9 @@ namespace SubSonic.Core.VisualStudio.Templating
             }
         }
 
-        public override void WriteLine(string value)
+        public override async System.Threading.Tasks.Task WriteLineAsync(string value)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             IVsOutputWindowPane pane;
 
@@ -84,27 +105,6 @@ namespace SubSonic.Core.VisualStudio.Templating
             {
                 pane.OutputString($"{value}{Environment.NewLine}");
             }
-        }
-
-        public override async System.Threading.Tasks.Task WriteAsync(string value)
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            Write(value);
-        }
-
-        public override async System.Threading.Tasks.Task WriteLineAsync()
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            WriteLine();
-        }
-
-        public override async System.Threading.Tasks.Task WriteLineAsync(string value)
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            WriteLine(value);
         }
 
         protected override void Dispose(bool disposing)

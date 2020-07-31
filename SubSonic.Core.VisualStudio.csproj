@@ -59,12 +59,6 @@
     <Compile Include="CustomTools\SubSonicTemplatingFileGenerator\TextTemplatingGenerator.cs" />
     <Compile Include="Extensions\AsyncServiceProvider.cs" />
     <Compile Include="Extensions\Strings.cs" />
-    <Compile Include="Forms\BuildInProgressDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\BuildInProgressDialog.Designer.cs">
-      <DependentUpon>BuildInProgressDialog.cs</DependentUpon>
-    </Compile>
     <Compile Include="Forms\SecurityOptionPageGrid.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -138,7 +132,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="16.6.2058" />
     <PackageReference Include="Mono.TextTemplating">
-      <Version>2.2.0-preview-0048-gea8e698eee</Version>
+      <Version>2.2.0-preview-0054-g92960e0b0a</Version>
     </PackageReference>
     <PackageReference Include="System.ComponentModel.Composition">
       <Version>4.7.0</Version>
@@ -183,9 +177,6 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Forms\BuildInProgressDialog.resx">
-      <DependentUpon>BuildInProgressDialog.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Forms\TemplatingSecurityWarning.en.resx">
       <DependentUpon>TemplatingSecurityWarning.cs</DependentUpon>
     </EmbeddedResource>
