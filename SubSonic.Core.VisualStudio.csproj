@@ -14,6 +14,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <DefineConstants Condition="'$(TargetFramework)'!='net35'">$(DefineConstants);FEATURE_ROSLYN</DefineConstants>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectTypeGuids>{82b43b9b-a64c-4715-b499-d71e9ca2bd60};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <ProjectGuid>{817A01DD-7E61-41B8-86C5-57F998A7A520}</ProjectGuid>
@@ -58,6 +59,12 @@
     <Compile Include="CustomTools\SubSonicTemplatingFileGenerator\TextTemplatingGenerator.cs" />
     <Compile Include="Extensions\AsyncServiceProvider.cs" />
     <Compile Include="Extensions\Strings.cs" />
+    <Compile Include="Forms\BuildInProgressDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\BuildInProgressDialog.Designer.cs">
+      <DependentUpon>BuildInProgressDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\SecurityOptionPageGrid.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -79,6 +86,7 @@
     </Compile>
     <Compile Include="Services\SubSonicTemplatingService\SubSonicTemplatingService.cs" />
     <Compile Include="Services\SubSonicTemplatingService\TextTemplating.cs" />
+    <Compile Include="Services\SubSonicTemplatingService\TextTemplatingServiceStructures.cs" />
     <Compile Include="Services\SubSonicTemplatingService\TextTemplatingSessionHost.cs" />
     <Compile Include="AsyncPackages\SubSonic.Core.VisualStudioAsyncPackage.cs" />
     <Compile Include="SubSonicCoreErrors.Designer.cs">
@@ -94,6 +102,7 @@
     <Compile Include="Templating\SqmFacade.cs" />
     <Compile Include="Templating\SubSonicDataConnection.cs" />
     <Compile Include="Templating\SubSonicConnectionManager.cs" />
+    <Compile Include="Templating\SubSonicOutputWriter.cs" />
     <Compile Include="Utilities\PathUtilities.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -129,7 +138,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="16.6.2058" />
     <PackageReference Include="Mono.TextTemplating">
-      <Version>2.2.0-preview-0030-ge7e7a3b32e</Version>
+      <Version>2.2.0-preview-0048-gea8e698eee</Version>
     </PackageReference>
     <PackageReference Include="System.ComponentModel.Composition">
       <Version>4.7.0</Version>
@@ -174,6 +183,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Forms\BuildInProgressDialog.resx">
+      <DependentUpon>BuildInProgressDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\TemplatingSecurityWarning.en.resx">
       <DependentUpon>TemplatingSecurityWarning.cs</DependentUpon>
     </EmbeddedResource>

@@ -233,34 +233,9 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
         protected virtual string ProcessTemplate(string inputFileName, string inputFileContent, ITextTemplating processor, IVsHierarchy hierarchy)
         {
-            string content = processor.PreprocessTemplate(inputFileName, inputFileContent, callback, TEMPLATE_CLASS, base.FileNamespace, out string[] references);
+            string content = processor.ProcessTemplate(inputFileName, inputFileContent, callback, hierarchy);
 
-            if (callback.Errors)
-            {
-                return ERROR_OUTPUT;
-            }
-
-            if (processor is ITextTemplatingEngineHost host)
-            {
-                Regex netstandard = new Regex("(netstandard)([1-9].[0-9])", RegexOptions.Compiled | RegexOptions.Singleline);
-
-                string pathToNetStandard = null;
-
-                for (int i = 0, n = references.Length; i < n; i++)
-                {
-                    references[i] = host.ResolveAssemblyReference(references[i]);
-
-                    // if a netstandard assembly is added we need to include the netstandard assembly
-                    if (netstandard.IsMatch(references[i]))
-                    {   // we need to make sure to include the netstandard dll
-                        Match match = netstandard.Match(references[i]);
-
-                        pathToNetStandard = host.ResolveAssemblyReference(string.Format(CultureInfo.InvariantCulture, "netstandard, Version={0}.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51", match.Groups[2].Value));
-                    }
-                }
-            }
-
-            return processor.ProcessTemplate(inputFileName, inputFileContent, callback, hierarchy);
+            return content;
         }
 
         public async Task<TInterface> GetServiceAsync<TService, TInterface>()

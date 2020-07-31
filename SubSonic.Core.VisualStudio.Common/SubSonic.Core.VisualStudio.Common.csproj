@@ -11,7 +11,8 @@
     <PackageReference Include="H.Pipes.AccessControl" Version="1.13.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.153.0" />
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0030-ge7e7a3b32e" />
+    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0048-gea8e698eee" />
+    <PackageReference Include="Mono.TextTemplating.Roslyn" Version="2.2.0-preview-0048-gea8e698eee" />
     <PackageReference Include="System.CodeDom" Version="4.7.0" />
   </ItemGroup>
 

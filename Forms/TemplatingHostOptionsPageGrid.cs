@@ -37,15 +37,15 @@ namespace SubSonic.Core.VisualStudio.Forms
             set => compilerOptions = value;
         }
 
-        private bool noLinePragmas = true;
+        private bool linePragmas = true;
 
         [Category(Package.SubSonicCoreCategory)]
-        [DisplayName("No Line Pragmas")]
+        [DisplayName("Line Pragmas")]
         [Description("TODO:: Set Description")]
-        public bool NoLinePragmas
+        public bool LinePragmas
         {
-            get => noLinePragmas;
-            set => noLinePragmas = value;
+            get => linePragmas;
+            set => linePragmas = value;
         }
 
         private bool relativeLinePragmas = true;
@@ -53,7 +53,7 @@ namespace SubSonic.Core.VisualStudio.Forms
         [Category(Package.SubSonicCoreCategory)]
         [DisplayName("Relative Line Pragmas")]
         [Description("TODO:: Set Description")]
-        public bool RelativeLinePragmas
+        public bool UseRelativeLinePragmas
         {
             get => relativeLinePragmas;
             set => relativeLinePragmas = value;

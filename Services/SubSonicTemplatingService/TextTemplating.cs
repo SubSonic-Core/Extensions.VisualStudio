@@ -16,9 +16,9 @@ using System.Runtime.Remoting;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Threading;
 using Thread = System.Threading.Thread;
+using ThreadingTask = System.Threading.Tasks.Task;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -64,7 +64,7 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 SubSonicComponents.Hierarchy = hierarchy;
                 SubSonicComponents.Callback = callback;
-                SubSonicComponents.InputFile = inputFilename;
+                SubSonicComponents.TemplateFile = inputFilename;
                 LastInvocationRaisedErrors = false;
                 SubSonicComponents.Host.SetFileExtension(SearchForLanguage(content, "C#") ? ".cs" : ".vb");
 
@@ -93,7 +93,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
                     if (runFactory == null)
                     {
-                        this.LogError(false, SubSonicCoreErrors.ErrorStartingRunFactoryProcess, -1, -1, InputFile);
+                        this.LogError(false, SubSonicCoreErrors.ErrorStartingRunFactoryProcess, -1, -1, TemplateFile);
                         DebugTemplateEventArgs args = new DebugTemplateEventArgs();
                         args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
                         args.Succeeded = false;
@@ -176,7 +176,7 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 SubSonicComponents.Hierarchy = hierarchy;
                 SubSonicComponents.Callback = callback;
-                SubSonicComponents.InputFile = inputFile;
+                SubSonicComponents.TemplateFile = inputFile;
 
                 SubSonicComponents.Host.SetFileExtension(SearchForLanguage(content, "C#") ? ".cs" : ".vb");
 
@@ -211,13 +211,13 @@ namespace SubSonic.Core.VisualStudio.Services
             if (this is ITextTemplatingComponents SubSonicComponents)
             {
                 SubSonicComponents.Callback = callback;
-                SubSonicComponents.InputFile = inputFile;
+                SubSonicComponents.TemplateFile = inputFile;
 
                 LastInvocationRaisedErrors = false;
 
                 result = SubSonicComponents.Engine.PreprocessTemplate(content, SubSonicComponents.Host, className, classNamespace, out string language, out references);
 
-                if (language.Equals("CSharp", StringComparison.OrdinalIgnoreCase))
+                if (language.Equals("C#", StringComparison.OrdinalIgnoreCase))
                 {
                     SubSonicComponents.Host.SetFileExtension(".cs");
                 }
@@ -318,7 +318,7 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            LogError(isWarning, message, -1, -1, InputFile);
+            LogError(isWarning, message, -1, -1, TemplateFile);
         }
 
         private void LogError(bool isWarning, string message, int line, int column, string fileName)
@@ -407,7 +407,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 }
                 catch(Exception ex)
                 {
-                    LogError(false, string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.RegisterIpcChannelFailed, ex), -1, -1, InputFile);
+                    LogError(false, string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.RegisterIpcChannelFailed, ex), -1, -1, TemplateFile);
                 }
             }
 
@@ -432,7 +432,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 }
                 catch(Exception ex)
                 {
-                    LogError(false, ex.ToString(), -1, -1, InputFile);
+                    LogError(false, ex.ToString(), -1, -1, TemplateFile);
 
                     return default;
                 }

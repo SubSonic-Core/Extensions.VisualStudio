@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.Threading;
 using Mono.TextTemplating;
 using Mono.VisualStudio.TextTemplating;
 using SubSonic.Core.VisualStudio.Common;
+using SubSonic.Core.VisualStudio.Forms;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
 using System.CodeDom.Compiler;
@@ -15,6 +16,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Lifetime;
 using System.Security;
@@ -36,13 +38,31 @@ namespace SubSonic.Core.VisualStudio.Services
         , IServiceProvider
         , IDisposable
     {
+        private static readonly Dictionary<string, string> KnownAssemblies = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "System", typeof(System.Uri).Assembly.Location },
+            { "System.Core", typeof(System.Linq.Enumerable).Assembly.Location },
+            { "System.Data", typeof(System.Data.DataTable).Assembly.Location },
+            { "System.Data.Common", typeof(System.Data.Common.DbParameter).Assembly.Location },
+            { "System.Linq", typeof(System.Linq.Enumerable).Assembly.Location },
+            { "System.Xml", typeof(System.Xml.XmlAttribute).Assembly.Location }
+        };
+
         private readonly SubSonicCoreVisualStudioAsyncPackage package;
         private readonly ErrorListProvider errorListProvider;
         private readonly List<string> standardAssemblyReferences;
         private readonly List<string> standardImports;
+        private readonly SubSonicOutputWriter subSonicOutput;
         private AppDomain transformDomain;
         private System.Diagnostics.Process transformProcess;
         private readonly Regex foundAssembly = new Regex(@"[A-Z|a-z]:\\", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
+
+        internal BuildInProgressDialog BuildInProgressDialog;
+
+        private IList<string> IncludePaths { get; }
+        private IList<string> ReferencePaths { get; }
+        readonly Dictionary<ParameterKey, string> parameters;
+        private readonly Dictionary<string, KeyValuePair<string, string>> directiveProcessors;
 
         public SubSonicTemplatingService(SubSonicCoreVisualStudioAsyncPackage package)
         {
@@ -54,7 +74,13 @@ namespace SubSonic.Core.VisualStudio.Services
             this.package = package ?? throw new ArgumentNullException(nameof(package));
             this.errorListProvider = new ErrorListProvider(package);
             this.errorListProvider.MaintainInitialTaskOrder = true;
-            this.Engine = new Mono.TextTemplating.TemplatingEngine();
+            this.Engine = new TemplatingEngine();
+
+            IncludePaths = new List<string>();
+            ReferencePaths = new List<string>();
+            parameters = new Dictionary<ParameterKey, string>();
+            directiveProcessors = new Dictionary<string, KeyValuePair<string, string>>();
+            subSonicOutput = new SubSonicOutputWriter(this);
 
             package.DTE.Events.SolutionEvents.AfterClosing += SolutionEvents_AfterClosing;
         }
@@ -70,6 +96,10 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             await TaskScheduler.Default;
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+            AddReferencePath(typeof(TextTransformation).Assembly.Location);
+            AddReferencePath(typeof(File).Assembly.Location);
+            AddReferencePath(typeof(StringReader).Assembly.Location);
 
             if (GetService(typeof(DTE)) is DTE dte)
             {
@@ -146,6 +176,8 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public object GetHostOption(string optionName)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             if (optionName.Equals(nameof(TemplateSettings.CachedTemplates), StringComparison.OrdinalIgnoreCase))
             {
                 return package.HostOptions.CachedTemplates;
@@ -156,11 +188,19 @@ namespace SubSonic.Core.VisualStudio.Services
             }
             else if (optionName.Equals(nameof(TemplateSettings.NoLinePragmas), StringComparison.OrdinalIgnoreCase))
             {
-                return package.HostOptions.NoLinePragmas;
+                return package.HostOptions.LinePragmas;
             }
-            else if (optionName.Equals(nameof(TemplateSettings.RelativeLinePragmas), StringComparison.OrdinalIgnoreCase))
+            else if (optionName.Equals(nameof(TemplateSettings.UseRelativeLinePragmas), StringComparison.OrdinalIgnoreCase))
             {
-                return package.HostOptions.RelativeLinePragmas;
+                return package.HostOptions.UseRelativeLinePragmas;
+            }
+            else if (optionName.Equals(nameof(TemplateSettings.Log), StringComparison.OrdinalIgnoreCase))
+            {   // supply the engine with a textwriter that can output to the output pane.
+                return subSonicOutput.Initialize();
+            }
+            else if (optionName.Equals(nameof(TemplateSettings.CancellationToken), StringComparison.OrdinalIgnoreCase))
+            {
+                return BuildInProgressDialog?.CancellationToken ?? CancellationToken.None;
             }
 
             return null;
@@ -168,7 +208,46 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public bool LoadIncludeText(string requestFileName, out string content, out string location)
         {
-            throw new NotImplementedException();
+            content = "";
+            location = "";
+
+            string xlocation = null;
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                xlocation = await ResolvePathAsync(requestFileName);
+
+                if (xlocation == null || !File.Exists(xlocation))
+                {
+                    foreach(string path in IncludePaths)
+                    {
+                        string f = Path.Combine(path, requestFileName);
+
+                        if (File.Exists(f))
+                        {
+                            xlocation = f;
+                            break;
+                        }
+                    }
+                }
+            });
+
+            if (xlocation.IsNullOrEmpty())
+            {
+                return false;
+            }
+
+            location = xlocation;
+
+            try
+            {
+                content = File.ReadAllText(location);
+                return true;
+            }
+            catch(IOException ex)
+            {
+                LogError($"Could not read included file '{location}':\n{ex}");
+            }
+            return false;
         }
 
         public void LogErrors(CompilerErrorCollection errors)
@@ -184,7 +263,17 @@ namespace SubSonic.Core.VisualStudio.Services
         // app domain is not trully supported going forward
         public AppDomain ProvideTemplatingAppDomain(string content)
         {
-            return AppDomain.CurrentDomain;
+            return null;
+        }
+
+        public void  AddReferencePath(string path)
+        {
+            path = Path.GetDirectoryName(path);
+
+            if (!ReferencePaths.Any(x => x.Equals(path, StringComparison.OrdinalIgnoreCase)))
+            {
+                ReferencePaths.Add(path);
+            }
         }
 
         public string ResolveAssemblyReference(string assemblyReference)
@@ -218,6 +307,28 @@ namespace SubSonic.Core.VisualStudio.Services
                 if (!foundAssembly.IsMatch(path))
                 {
                     path = GlobalAssemblyCacheHelper.GetLocation(assemblyReference);
+                }
+
+                // let's check our list of known assemblies
+                if (!foundAssembly.IsMatch(path))
+                {
+                    if (KnownAssemblies.TryGetValue(assemblyReference, out string mappedAssemblyReference))
+                    {
+                        path = mappedAssemblyReference;
+                    }
+                }
+
+                // let's check our list of configured ReferencePaths
+                if (!foundAssembly.IsMatch(path))
+                {
+                    foreach (string referencePath in ReferencePaths)
+                    {
+                        string xpath = Path.Combine(referencePath, assemblyReference);
+                        if (File.Exists(xpath))
+                        {
+                            path = xpath;
+                        }
+                    }
                 }
 
                 // still have not found anything let's check the public assemblies folder
@@ -327,17 +438,80 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public Type ResolveDirectiveProcessor(string processorName)
         {
-            throw new NotImplementedException();
+            if (!directiveProcessors.TryGetValue(processorName, out KeyValuePair<string, string> value))
+            {
+                throw new Exception(string.Format("No directive processor registered as '{0}'", processorName));
+            }
+
+            var asmPath = ResolveAssemblyReference(value.Value);
+            if (asmPath.IsNullOrEmpty())
+            {
+                throw new Exception(string.Format("Could not resolve assembly '{0}' for directive processor '{1}'", value.Value, processorName));
+            }
+            var asm = Assembly.LoadFrom(asmPath);
+            return asm.GetType(value.Key, true);
         }
 
         public string ResolveParameterValue(string directiveId, string processorName, string parameterName)
         {
-            throw new NotImplementedException();
+            var key = new ParameterKey(processorName, directiveId, parameterName);
+            if (parameters.TryGetValue(key, out var value))
+            {
+                return value;
+            }
+            if (processorName != null || directiveId != null)
+            {
+                return ResolveParameterValue(null, null, parameterName);
+            }
+            return null;
         }
 
         public string ResolvePath(string path)
         {
-            throw new NotImplementedException();
+            string result = path;
+
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                result = await ResolvePathAsync(path);
+            });
+
+            return result;
+        }
+
+        private async Task<string> ResolvePathAsync(string path)
+        {
+            if (path.IsNotNullOrEmpty())
+            {
+                path = await ExpandAllVariablesAsync(path);
+                if (Path.IsPathRooted(path))
+                {
+                    return path;
+                }
+            }
+
+            string directory = null;
+
+            if (TemplateFile.IsNullOrEmpty())
+            {
+                directory = Environment.CurrentDirectory;
+            }
+            else
+            {
+                directory = Path.GetDirectoryName(Path.GetFullPath(TemplateFile));
+            }
+
+            if (path.IsNullOrEmpty())
+            {
+                return directory;
+            }
+
+            string test = Path.Combine(directory, path);
+            if (File.Exists(test) || Directory.Exists(test))
+            {
+                return test;
+            }
+
+            return path;
         }
 
         public void SetFileExtension(string extension)
@@ -423,8 +597,10 @@ namespace SubSonic.Core.VisualStudio.Services
         public ITextTemplatingEngineHost Host => this;
 
         public IDebugTextTemplatingEngine Engine { get; }
+
+        private TemplatingEngine MonoEngine => Engine as TemplatingEngine;
+
         ITextTemplatingEngine ITextTemplatingComponents.Engine => Engine;
-        public string InputFile { get; set; }
         public ITextTemplatingCallback Callback { get; set; }
         public object Hierarchy { get; set; }
 
@@ -439,9 +615,6 @@ namespace SubSonic.Core.VisualStudio.Services
         }
         #endregion
 
-        #region ITextTemplatingSessionHost
-        
-        #endregion
         public object GetService(Type serviceType)
         {
             object result = null;
@@ -471,6 +644,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 {
                     package.DTE.Events.SolutionEvents.AfterClosing -= SolutionEvents_AfterClosing;
                     errorListProvider.Dispose();
+                    subSonicOutput.Dispose();
                     RemotingServices.Disconnect(this);
                 }
 
