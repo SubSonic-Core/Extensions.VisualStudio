@@ -626,7 +626,7 @@ namespace SubSonic.Core.VisualStudio.Services
         #region ITextTemplatingComponents
         public ITextTemplatingEngineHost Host => this;
 
-        public IDebugTextTemplatingEngine Engine { get; }
+        public IProcessTextTemplatingEngine Engine { get; }
 
         private TemplatingEngine MonoEngine => Engine as TemplatingEngine;
 

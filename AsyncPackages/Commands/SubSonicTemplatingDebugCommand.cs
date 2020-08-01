@@ -114,7 +114,7 @@ namespace SubSonic.Core.VisualStudio.AsyncPackages.Commands
 
                         if (SubSonicPackage != null && SaveAllOpenFiles())
                         {
-                            SubSonicPackage.DebugTemplate(projectItem, hierarchy, fileName, File.ReadAllText(fileName));
+                            SubSonicPackage.ProcessTemplate(projectItem, hierarchy, fileName, File.ReadAllText(fileName));
                         }
                     }
                 }
@@ -144,7 +144,7 @@ namespace SubSonic.Core.VisualStudio.AsyncPackages.Commands
                         if (extObject is ProjectItem projectItem)
                         {
                             command.Visible = GetCustomTool(projectItem).Equals(nameof(SubSonicTemplatingFileGenerator), StringComparison.OrdinalIgnoreCase);
-                            command.Enabled = !SubSonicPackage.IsDebuggingTemplate;
+                            command.Enabled = !SubSonicPackage.IsTemplateInProcess;
                         }
                     }
                 }

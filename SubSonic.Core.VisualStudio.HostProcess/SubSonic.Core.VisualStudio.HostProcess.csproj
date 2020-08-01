@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0057-g2a4b599317" />
+    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0059-g9c8e762ec7" />
   </ItemGroup>
 
   <ItemGroup>

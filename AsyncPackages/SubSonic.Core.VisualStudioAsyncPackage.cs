@@ -65,9 +65,9 @@ namespace SubSonic.Core.VisualStudio
         private static SubSonicCoreVisualStudioAsyncPackage singletonInstance;
         private static TextTemplatingCallback callback;
         private SolutionEvents solutionEvents;
-        private bool isDebuggingTemplate;
+        private bool isTemplateInProcess;
         private ProjectItem templateProjectItem;
-        private string debugResults;
+        private string processResults;
 
         /// <summary>
         /// SubSonic.Core.VisualStudioPackage GUID string.
@@ -143,9 +143,9 @@ namespace SubSonic.Core.VisualStudio
 
         internal static SubSonicCoreVisualStudioAsyncPackage Singleton => singletonInstance;
 
-        public bool IsDebuggingTemplate => isDebuggingTemplate;
+        public bool IsTemplateInProcess => isTemplateInProcess;
 
-        public string DebugResults { get => debugResults; set => debugResults = value; }
+        public string ProcessResults { get => processResults; set => processResults = value; }
 
         /// <summary>
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
@@ -179,13 +179,13 @@ namespace SubSonic.Core.VisualStudio
             
         }
 
-        private void SubSonicTemplatingService_DebugCompleted(object sender, DebugTemplateEventArgs e)
+        private void SubSonicTemplatingService_TransformationProcessCompleted(object sender, ProcessTemplateEventArgs e)
         {
             try
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
 
-                debugResults = e.TemplateOutput;
+                processResults = e.TemplateOutput;
 
                 if (templateProjectItem.Object is VSProjectItem projectItem1)
                 {
@@ -203,9 +203,9 @@ namespace SubSonic.Core.VisualStudio
             }
             finally
             {
-                isDebuggingTemplate = false;
-                debugResults = null;
-                subSonicTemplatingService.DebugCompleted -= SubSonicTemplatingService_DebugCompleted;
+                isTemplateInProcess = false;
+                processResults = null;
+                subSonicTemplatingService.TransformProcessCompleted -= SubSonicTemplatingService_TransformationProcessCompleted;
                 EndErrorSession();
             }
         }
@@ -271,11 +271,11 @@ namespace SubSonic.Core.VisualStudio
             }
         }
 
-        internal void DebugTemplate(ProjectItem projectItem, IVsHierarchy hierarchy, string filename, string content)
+        internal void ProcessTemplate(ProjectItem projectItem, IVsHierarchy hierarchy, string filename, string content)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            if (isDebuggingTemplate)
+            if (isTemplateInProcess)
             {
                 throw new InvalidOperationException(SubSonicCoreErrors.CannotDebugMultipleTemplates);
             }
@@ -286,18 +286,18 @@ namespace SubSonic.Core.VisualStudio
 
                 try
                 {
-                    isDebuggingTemplate = true;
+                    isTemplateInProcess = true;
 
                     callback.Initialize();
 
                     BeginErrorSession();
 
-                    subSonicTemplatingService.DebugCompleted += SubSonicTemplatingService_DebugCompleted;
-                    subSonicTemplatingService.DebugTemplateAsync(filename, content, callback, hierarchy);
+                    subSonicTemplatingService.TransformProcessCompleted += SubSonicTemplatingService_TransformationProcessCompleted;
+                    subSonicTemplatingService.ProcessTemplateAsync(filename, content, callback, hierarchy);
                 }
                 catch(Exception)
                 {
-                    isDebuggingTemplate = false;
+                    isTemplateInProcess = false;
                     throw;
                 }
             }

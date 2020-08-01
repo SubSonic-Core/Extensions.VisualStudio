@@ -47,11 +47,11 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            if ((Package?.IsDebuggingTemplate ?? false) && Package?.DebugResults != null)
+            if ((Package?.IsTemplateInProcess ?? false) && Package?.ProcessResults != null)
             {
                 callback = Package.TextTemplatingCallback.DeepCopy();
-                result = Package.DebugResults;
-                Package.DebugResults = null;
+                result = Package.ProcessResults;
+                Package.ProcessResults = null;
             }
             else
             {

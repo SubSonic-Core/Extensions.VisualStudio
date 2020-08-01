@@ -132,7 +132,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="16.6.2058" />
     <PackageReference Include="Mono.TextTemplating">
-      <Version>2.2.0-preview-0057-g2a4b599317</Version>
+      <Version>2.2.0-preview-0059-g9c8e762ec7</Version>
     </PackageReference>
     <PackageReference Include="System.ComponentModel.Composition">
       <Version>4.7.0</Version>

@@ -23,7 +23,7 @@ using ThreadingTask = System.Threading.Tasks.Task;
 namespace SubSonic.Core.VisualStudio.Services
 {
     public partial class SubSonicTemplatingService
-        : IDebugTextTemplating
+        : IProcessTextTemplating
         , ITextTemplating
     {
         private int errorSessionDepth = 0;
@@ -37,18 +37,18 @@ namespace SubSonic.Core.VisualStudio.Services
 
         #region IDebugTextTemplating
 
-        EventHandler<DebugTemplateEventArgs> DebugCompletedHandler = null;
+        EventHandler<ProcessTemplateEventArgs> TransformProcessCompletedHandler = null;
 
-        public event EventHandler<DebugTemplateEventArgs> DebugCompleted
+        public event EventHandler<ProcessTemplateEventArgs> TransformProcessCompleted
         {
             add
             {
-                DebugCompletedHandler = new EventHandler<DebugTemplateEventArgs>(value);
+                TransformProcessCompletedHandler = new EventHandler<ProcessTemplateEventArgs>(value);
             }
             remove
             {
-                _ = (EventHandler<DebugTemplateEventArgs>)Delegate.Remove(DebugCompletedHandler, value);
-                DebugCompletedHandler = null;
+                _ = (EventHandler<ProcessTemplateEventArgs>)Delegate.Remove(TransformProcessCompletedHandler, value);
+                TransformProcessCompletedHandler = null;
             }
         }
 
@@ -56,9 +56,9 @@ namespace SubSonic.Core.VisualStudio.Services
         public bool MustUnloadAfterProcessingTemplate { get; private set; }
         
 
-        public void DebugTemplateAsync(string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy)
+        public async ThreadingTask ProcessTemplateAsync(string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             if (this is ITextTemplatingComponents SubSonicComponents)
             {
@@ -71,7 +71,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 try
                 {
                     bool success = false;
-                    IDebugTransformationRun debugTransformationRun = null;
+                    IProcessTransformationRun processTransformationRun = null;
 
                     try
                     {
@@ -94,18 +94,18 @@ namespace SubSonic.Core.VisualStudio.Services
                     if (runFactory == null)
                     {
                         this.LogError(false, SubSonicCoreErrors.ErrorStartingRunFactoryProcess, -1, -1, TemplateFile);
-                        DebugTemplateEventArgs args = new DebugTemplateEventArgs();
+                        ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
                         args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
                         args.Succeeded = false;
-                        this.OnDebugCompleted(args);
+                        this.OnTransformProcessCompleted(args);
                         return;
                     }
 
-                    if (SubSonicComponents.Engine is IDebugTextTemplatingEngine DebugEngine)
+                    if (SubSonicComponents.Engine is IProcessTextTemplatingEngine ProcessEngine)
                     {
-                        debugTransformationRun = DebugEngine.PrepareTransformationRun(content, SubSonicComponents.Host, runFactory);
+                        processTransformationRun = ProcessEngine.PrepareTransformationRun(content, SubSonicComponents.Host, runFactory);
 
-                        if (debugTransformationRun != null)
+                        if (processTransformationRun != null)
                         {
                             try
                             {
@@ -128,10 +128,10 @@ namespace SubSonic.Core.VisualStudio.Services
                         }
                         else
                         {
-                            DebugTemplateEventArgs args = new DebugTemplateEventArgs();
+                            ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
                             args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
                             args.Succeeded = false;
-                            this.OnDebugCompleted(args);
+                            this.OnTransformProcessCompleted(args);
                             return;
                         }
                     }
@@ -139,16 +139,16 @@ namespace SubSonic.Core.VisualStudio.Services
                     if (success)
                     {
                         Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
-                        this.debugThread = new Thread(() => StartTransformation(inputFilename, debugTransformationRun, uiDispatcher));
+                        this.debugThread = new Thread(() => StartTransformation(inputFilename, processTransformationRun, uiDispatcher));
                         this.debugThread.Start();
                     }
                     else
                     {
                         this.LogError(false, SubSonicCoreErrors.ErrorAttachingToRunFactoryProcess, -1, -1, inputFilename);
-                        DebugTemplateEventArgs args = new DebugTemplateEventArgs();
+                        ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
                         args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
                         args.Succeeded = false;
-                        this.OnDebugCompleted(args);
+                        this.OnTransformProcessCompleted(args);
                     }
                     return;
 
@@ -156,10 +156,10 @@ namespace SubSonic.Core.VisualStudio.Services
                 catch (Exception exception3)
                 {
                     this.LogError(false, exception3.ToString(), -1, -1, inputFilename);
-                    DebugTemplateEventArgs args = new DebugTemplateEventArgs();
+                    ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
                     args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
                     args.Succeeded = false;
-                    OnDebugCompleted(args);
+                    OnTransformProcessCompleted(args);
                     return;
                 }
             }
@@ -300,9 +300,9 @@ namespace SubSonic.Core.VisualStudio.Services
         }
         #endregion
 
-        private void OnDebugCompleted(DebugTemplateEventArgs args)
+        private void OnTransformProcessCompleted(ProcessTemplateEventArgs args)
         {
-            DebugCompletedHandler?.Invoke(this, args);
+            TransformProcessCompletedHandler?.Invoke(this, args);
         }
 
         private bool SearchForLanguage(string templateContent, string language)
@@ -467,15 +467,14 @@ namespace SubSonic.Core.VisualStudio.Services
             return runFactory;
         }
 
-        private void StartTransformation(string filename, IDebugTransformationRun transformationRun, Dispatcher uiDispatcher)
+        private void StartTransformation(string filename, IProcessTransformationRun transformationRun, Dispatcher uiDispatcher)
         {
             bool success = false;
-            string debugErrorOutput = SubSonicCoreErrors.DebugErrorOutput;
-            bool debug_success = false;
+            string processOutput = SubSonicCoreErrors.DebugErrorOutput;
             try
             {
-                debugErrorOutput = this.runFactory.RunTransformation(transformationRun);
-                debug_success = !transformationRun.Errors.HasErrors;
+                processOutput = this.runFactory.RunTransformation(transformationRun);
+                success = !transformationRun.Errors.HasErrors;
                 this.LogErrors(transformationRun.Errors);
             }
             catch (RemotingException exception)
@@ -490,13 +489,9 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 if (!success)
                 {
-                    DebugTemplateEventArgs args1 = new DebugTemplateEventArgs();
-                    args1.TemplateOutput = debugErrorOutput;
-                    args1.Succeeded = debug_success;
-                    DebugTemplateEventArgs result = args1;
-
-
-
+                    ProcessTemplateEventArgs result = new ProcessTemplateEventArgs();
+                    result.TemplateOutput = processOutput;
+                    result.Succeeded = success;
 
 #pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
                     uiDispatcher.BeginInvoke((Action) (() => {
@@ -510,7 +505,7 @@ namespace SubSonic.Core.VisualStudio.Services
             }
         }
 
-        private void FinishTransformation(string filename, DebugTemplateEventArgs result)
+        private void FinishTransformation(string filename, ProcessTemplateEventArgs result)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -533,7 +528,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 }
                 finally
                 {
-                    this.OnDebugCompleted(result);
+                    this.OnTransformProcessCompleted(result);
                 }
             }
         }
