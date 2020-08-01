@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Mono.TextTemplating;
+using Mono.TextTemplating.CodeCompilation;
 using Mono.VisualStudio.TextTemplating;
 using Mono.VisualStudio.TextTemplating.VSHost;
 using SubSonic.Core.VisualStudio.Common;
@@ -217,8 +219,27 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
         protected virtual string ProcessTemplate(string inputFileName, string inputFileContent, ITextTemplating processor, IVsHierarchy hierarchy)
         {
-            string content = processor.ProcessTemplate(inputFileName, inputFileContent, callback, hierarchy);
+            string content = null;
 
+            if (processor is ITextTemplatingService service)
+            {
+                RuntimeKind runtime = (RuntimeKind)(service.GetHostOption(nameof(TemplateSettings.RuntimeKind)) ?? RuntimeKind.Default);
+
+                if (runtime != RuntimeKind.NetCore)
+                {
+                    content = processor.ProcessTemplate(inputFileName, inputFileContent, callback, hierarchy);
+                }
+                else
+                {
+                    ThreadHelper.JoinableTaskFactory.Run(async () =>
+                    {
+                        if (service is IProcessTextTemplating process)
+                        {
+                            content = await process.ProcessTemplateAsync(inputFileName, inputFileContent, callback, hierarchy);
+                        }
+                    });
+                }
+            }
             return content;
         }
 

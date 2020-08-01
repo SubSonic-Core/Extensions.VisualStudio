@@ -18,7 +18,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Threading;
 using Thread = System.Threading.Thread;
-using ThreadingTask = System.Threading.Tasks.Task;
+using threadingTasks = System.Threading.Tasks;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -56,7 +56,7 @@ namespace SubSonic.Core.VisualStudio.Services
         public bool MustUnloadAfterProcessingTemplate { get; private set; }
         
 
-        public async ThreadingTask ProcessTemplateAsync(string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false)
+        public async threadingTasks.Task<string> ProcessTemplateAsync(string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -98,7 +98,7 @@ namespace SubSonic.Core.VisualStudio.Services
                         args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
                         args.Succeeded = false;
                         this.OnTransformProcessCompleted(args);
-                        return;
+                        return null;
                     }
 
                     if (SubSonicComponents.Engine is IProcessTextTemplatingEngine ProcessEngine)
@@ -132,7 +132,7 @@ namespace SubSonic.Core.VisualStudio.Services
                             args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
                             args.Succeeded = false;
                             this.OnTransformProcessCompleted(args);
-                            return;
+                            return null;
                         }
                     }
 
@@ -150,8 +150,6 @@ namespace SubSonic.Core.VisualStudio.Services
                         args.Succeeded = false;
                         this.OnTransformProcessCompleted(args);
                     }
-                    return;
-
                 }
                 catch (Exception exception3)
                 {
@@ -160,9 +158,10 @@ namespace SubSonic.Core.VisualStudio.Services
                     args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
                     args.Succeeded = false;
                     OnTransformProcessCompleted(args);
-                    return;
                 }
             }
+
+            return null;
         }
 
         
