@@ -62,7 +62,9 @@ namespace SubSonic.Core.VisualStudio.Wizards
                         if (string.IsNullOrEmpty(inputForm.SelectedConnectionName) == false &&
                             connectionManager.Connections[inputForm.SelectedConnectionName] != null)
                         {
-                            replacementsDictionary.Add("$connectionKey$", inputForm.SelectedConnectionName);
+                            string connectionKey = inputForm.SelectedConnectionName;
+
+                            replacementsDictionary.Add("$connectionKey$", connectionKey.Substring(connectionKey.IndexOf("#") + 1).Replace(".", "_"));
                         }
                         else
                         {

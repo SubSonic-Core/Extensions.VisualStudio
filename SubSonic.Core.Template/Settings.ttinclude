@@ -1,4 +1,5 @@
 ﻿<#@ assembly name="EnvDTE" #>
+<#@ parameter type="System.String" name="$connectionKey$" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.Data" #>
 <#@ import namespace="System.Data.SqlClient" #>
@@ -14,7 +15,7 @@
 <#+
 public class Settings
 {
-	const string connectionKey = @"$connectionKey$";
+	const string connection = @"<#=$connectionKey$#>";
 
 	public static ITextTemplatingEngineHost Host { get; set; }
 
@@ -40,16 +41,16 @@ public class Settings
 		}
 	}
 
-	public static IDataConnection Connection
+	public static string Connection
 	{
 		get
 		{
-			if (GetService<ISubSonicTemplatingService>() is ISubSonicTemplatingService subsonic)
+			if (!string.IsNullOrEmpty(connection))
 			{
-				return subsonic.ConnectionManager[connectionKey];
+				return connection;
 			}
 
-			throw new InvalidOperationException("Unable to resolve ISubSonicTemplatingService!");
+			throw new InvalidOperationException("Connection string was not injected.");
 		}
 	}
 
