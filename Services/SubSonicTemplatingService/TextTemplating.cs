@@ -180,6 +180,8 @@ namespace SubSonic.Core.VisualStudio.Services
 
                 SubSonicComponents.Host.SetFileExtension(SearchForLanguage(content, "C#") ? ".cs" : ".vb");
 
+                Session = CreateSession();
+
                 result = SubSonicComponents.Engine.ProcessTemplate(content, SubSonicComponents.Host);
 
                 if ((errorSessionDepth == 0) && MustUnloadAfterProcessingTemplate)

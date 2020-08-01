@@ -1,5 +1,4 @@
 ﻿<#@ assembly name="EnvDTE" #>
-<#@ assembly name="System.Xml" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.Data" #>
 <#@ import namespace="System.Data.SqlClient" #>

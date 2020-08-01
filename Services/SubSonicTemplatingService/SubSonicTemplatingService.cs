@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Mono.TextTemplating;
+using Mono.TextTemplating.CodeCompilation;
 using Mono.VisualStudio.TextTemplating;
 using SubSonic.Core.VisualStudio.Common;
 using SubSonic.Core.VisualStudio.Forms;
@@ -38,14 +39,13 @@ namespace SubSonic.Core.VisualStudio.Services
         , IServiceProvider
         , IDisposable
     {
-        private static readonly Dictionary<string, string> KnownAssemblies = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, string> KnownAssemblyNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "System", typeof(System.Uri).Assembly.Location },
-            { "System.Core", typeof(System.Linq.Enumerable).Assembly.Location },
-            { "System.Data", typeof(System.Data.DataTable).Assembly.Location },
-            { "System.Data.Common", typeof(System.Data.Common.DbParameter).Assembly.Location },
-            { "System.Linq", typeof(System.Linq.Enumerable).Assembly.Location },
-            { "System.Xml", typeof(System.Xml.XmlAttribute).Assembly.Location }
+            { "System", Path.GetFileName(typeof(System.Uri).Assembly.Location) },
+            { "System.Core", Path.GetFileName(typeof(System.Linq.Enumerable).Assembly.Location) },
+            { "System.Data", Path.GetFileName(typeof(System.Data.DataTable).Assembly.Location) },
+            { "System.Linq", Path.GetFileName(typeof(System.Linq.Enumerable).Assembly.Location) },
+            { "System.Xml", Path.GetFileName(typeof(System.Xml.XmlAttribute).Assembly.Location) }
         };
 
         private readonly SubSonicCoreVisualStudioAsyncPackage package;
@@ -59,8 +59,8 @@ namespace SubSonic.Core.VisualStudio.Services
 
         internal CancellationTokenSource CancellationTokenSource;
 
-        private IList<string> IncludePaths { get; }
-        private IList<string> ReferencePaths { get; }
+        private readonly IList<string> includePaths;
+        private readonly IDictionary<RuntimeKind, IList<string>> referencePaths;
         readonly Dictionary<ParameterKey, string> parameters;
         private readonly Dictionary<string, KeyValuePair<string, string>> directiveProcessors;
 
@@ -76,8 +76,8 @@ namespace SubSonic.Core.VisualStudio.Services
             this.errorListProvider.MaintainInitialTaskOrder = true;
             this.Engine = new TemplatingEngine();
 
-            IncludePaths = new List<string>();
-            ReferencePaths = new List<string>();
+            includePaths = new List<string>();
+            referencePaths = new Dictionary<RuntimeKind, IList<string>>();
             parameters = new Dictionary<ParameterKey, string>();
             directiveProcessors = new Dictionary<string, KeyValuePair<string, string>>();
             subSonicOutput = new SubSonicOutputWriter(this);
@@ -100,9 +100,10 @@ namespace SubSonic.Core.VisualStudio.Services
 
             await subSonicOutput.InitializeAsync("SubSonic Core", cancellationToken);
 
-            AddReferencePath(typeof(TextTransformation).Assembly.Location);
-            AddReferencePath(typeof(File).Assembly.Location);
-            AddReferencePath(typeof(StringReader).Assembly.Location);
+            foreach (RuntimeInfo info in RuntimeInfo.GetAllValidRuntimes())
+            {
+                AddReferencePath(info.Kind, info.RuntimeDirectory);
+            }
 
             if (GetService(typeof(DTE)) is DTE dte)
             {
@@ -226,7 +227,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
                 if (xlocation == null || !File.Exists(xlocation))
                 {
-                    foreach(string path in IncludePaths)
+                    foreach(string path in includePaths)
                     {
                         string f = Path.Combine(path, requestFileName);
 
@@ -273,14 +274,36 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             return null;
         }
-
-        public void  AddReferencePath(string path)
+        /// <summary>
+        /// add a reference path for a particular runtime
+        /// </summary>
+        /// <param name="runtime"></param>
+        /// <param name="directoryPath"></param>
+        public void  AddReferencePath(RuntimeKind runtime, string directoryPath)
         {
-            path = Path.GetDirectoryName(path);
-
-            if (!ReferencePaths.Any(x => x.Equals(path, StringComparison.OrdinalIgnoreCase)))
+            if (!referencePaths.ContainsKey(runtime))
             {
-                ReferencePaths.Add(path);
+                referencePaths[runtime] = new List<string>();
+            }
+
+            if (!referencePaths[runtime].Any(x => x.Equals(directoryPath, StringComparison.OrdinalIgnoreCase)))
+            {
+                referencePaths[runtime].Add(directoryPath);
+            }
+        }
+
+        public IList<string> ReferencePaths
+        {
+            get
+            {
+                RuntimeKind runtime = package.HostOptions.RuntimeKind;
+
+                if (referencePaths.ContainsKey(runtime))
+                {
+                    return referencePaths[runtime];
+                }
+
+                return new List<string>();
             }
         }
 
@@ -317,24 +340,21 @@ namespace SubSonic.Core.VisualStudio.Services
                     path = GlobalAssemblyCacheHelper.GetLocation(assemblyReference);
                 }
 
-                // let's check our list of known assemblies
-                if (!foundAssembly.IsMatch(path))
-                {
-                    if (KnownAssemblies.TryGetValue(assemblyReference, out string mappedAssemblyReference))
-                    {
-                        path = mappedAssemblyReference;
-                    }
-                }
-
                 // let's check our list of configured ReferencePaths
                 if (!foundAssembly.IsMatch(path))
                 {
+                    KnownAssemblyNames.TryGetValue(assemblyReference, out string fileName);
+
                     foreach (string referencePath in ReferencePaths)
                     {
-                        string xpath = Path.Combine(referencePath, assemblyReference);
+                        string xpath = Path.Combine(referencePath, fileName ?? assemblyReference);
                         if (File.Exists(xpath))
                         {
                             path = xpath;
+                        }
+                        else if (File.Exists($"{xpath}.dll"))
+                        {
+                            path = $"{xpath}.dll";
                         }
                     }
                 }
@@ -446,6 +466,8 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public Type ResolveDirectiveProcessor(string processorName)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             if (!directiveProcessors.TryGetValue(processorName, out KeyValuePair<string, string> value))
             {
                 throw new Exception(string.Format("No directive processor registered as '{0}'", processorName));

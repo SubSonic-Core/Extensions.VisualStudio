@@ -11,8 +11,8 @@
     <PackageReference Include="H.Pipes.AccessControl" Version="1.13.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.153.0" />
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0054-g92960e0b0a" />
-    <PackageReference Include="Mono.TextTemplating.Roslyn" Version="2.2.0-preview-0054-g92960e0b0a" />
+    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0057-g2a4b599317" />
+    <PackageReference Include="Mono.TextTemplating.Roslyn" Version="2.2.0-preview-0057-g2a4b599317" />
     <PackageReference Include="System.CodeDom" Version="4.7.0" />
   </ItemGroup>
 
@@ -20,6 +20,10 @@
     <None Update="SubSonicCoreVisualStudioCommon.snk">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="SubSonic.Core.Collections\" />
   </ItemGroup>
 
 </Project>

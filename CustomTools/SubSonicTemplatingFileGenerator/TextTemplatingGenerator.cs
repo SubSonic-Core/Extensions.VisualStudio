@@ -3,16 +3,13 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Mono.VisualStudio.TextTemplating;
 using Mono.VisualStudio.TextTemplating.VSHost;
-using Microsoft.VisualStudio.Threading;
+using SubSonic.Core.VisualStudio.Common;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Remoting.Messaging;
-using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BaseCodeGeneratorWithSite = Microsoft.VisualStudio.TextTemplating.VSHost.BaseCodeGeneratorWithSite;
 
@@ -106,7 +103,7 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
             callback.SetOutputEncoding(EncodingHelper.GetEncoding(inputFileName) ?? Encoding.UTF8, false);
 
-            result = result.TrimStart(Environment.NewLine.ToCharArray());
+            result = result?.TrimStart(Environment.NewLine.ToCharArray()) ?? ERROR_OUTPUT;
 
             byte[] bytes = callback.OutputEncoding.GetBytes(result);
             byte[] preamble = callback.OutputEncoding.GetPreamble();
@@ -152,25 +149,12 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
                 if (processor is ITextTemplatingEngineHost host)
                 {
-                    if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\System.Data")))
-                    {
-                        host.StandardAssemblyReferences.Add("System.Data");
-                    }
+                    host.StandardAssemblyReferences.AddIfNotExist("System.Data");
+                    host.StandardAssemblyReferences.AddIfNotExist("System.Data.Common");
+                    host.StandardAssemblyReferences.AddIfNotExist("System.ComponentModel");
+                    host.StandardAssemblyReferences.AddIfNotExist("SubSonic.Core.DataAccessLayer");
 
-                    if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\System.Data.Common")))
-                    {
-                        host.StandardAssemblyReferences.Add("System.Data.Common");
-                    }
-
-                    if (!host.StandardAssemblyReferences.Any(x => x.Contains("\\SubSonic.Core.DataAccessLayer")))
-                    {
-                        host.StandardAssemblyReferences.Add("SubSonic.Core.DataAccessLayer");
-                    }
-
-                    if (!host.StandardImports.Any(x => x.Equals("SubSonic", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        host.StandardImports.Add("SubSonic");
-                    }
+                    host.StandardImports.AddIfNotExist("SubSonic");
                 }
 
                 return processor;
