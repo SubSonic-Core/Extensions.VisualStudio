@@ -15,7 +15,7 @@
 <#+
 public class Settings
 {
-	const string connection = @"<#=$connectionKey$#>";
+	const string connection = $connectionKey$;
 
 	public static ITextTemplatingEngineHost Host { get; set; }
 

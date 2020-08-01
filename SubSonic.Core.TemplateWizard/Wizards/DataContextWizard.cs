@@ -64,7 +64,7 @@ namespace SubSonic.Core.VisualStudio.Wizards
                         {
                             string connectionKey = inputForm.SelectedConnectionName;
 
-                            replacementsDictionary.Add("$connectionKey$", connectionKey.Substring(connectionKey.IndexOf("#") + 1).Replace(".", "_"));
+                            replacementsDictionary.Add("$connectionKey$", connectionKey.Substring(connectionKey.IndexOf("#")).Replace("#", "NS").Replace(".", "_"));
                         }
                         else
                         {
