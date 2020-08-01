@@ -271,7 +271,7 @@ namespace SubSonic.Core.VisualStudio
             }
         }
 
-        internal void ProcessTemplate(ProjectItem projectItem, IVsHierarchy hierarchy, string filename, string content)
+        internal void ProcessDebugTemplate(ProjectItem projectItem, IVsHierarchy hierarchy, string filename, string content)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -293,7 +293,11 @@ namespace SubSonic.Core.VisualStudio
                     BeginErrorSession();
 
                     subSonicTemplatingService.TransformProcessCompleted += SubSonicTemplatingService_TransformationProcessCompleted;
-                    subSonicTemplatingService.ProcessTemplateAsync(filename, content, callback, hierarchy);
+
+                    ThreadHelper.JoinableTaskFactory.Run(async () =>
+                    {
+                       await subSonicTemplatingService.ProcessTemplateAsync(filename, content, callback, hierarchy, true);
+                    });
                 }
                 catch(Exception)
                 {

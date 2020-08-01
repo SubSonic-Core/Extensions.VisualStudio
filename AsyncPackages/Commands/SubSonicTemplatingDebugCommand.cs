@@ -114,7 +114,7 @@ namespace SubSonic.Core.VisualStudio.AsyncPackages.Commands
 
                         if (SubSonicPackage != null && SaveAllOpenFiles())
                         {
-                            SubSonicPackage.ProcessTemplate(projectItem, hierarchy, fileName, File.ReadAllText(fileName));
+                            SubSonicPackage.ProcessDebugTemplate(projectItem, hierarchy, fileName, File.ReadAllText(fileName));
                         }
                     }
                 }
