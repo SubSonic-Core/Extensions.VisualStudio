@@ -19,6 +19,15 @@ using System.Threading;
 using System.Windows.Threading;
 using Thread = System.Threading.Thread;
 using threadingTasks = System.Threading.Tasks;
+using SubSonic.Core.VisualStudio.Host;
+using Mono.TextTemplating;
+using SubSonic.Core.TextWriters;
+using SubSonic.Core.Utilities;
+using System.Runtime.CompilerServices;
+using Microsoft.VisualStudio.Services.Common;
+using System.CodeDom.Compiler;
+using Mono.TextTemplating.CodeCompilation;
+using SubSonic.Core.VisualStudio.Common;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -58,110 +67,94 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public async threadingTasks.Task<string> ProcessTemplateAsync(string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false)
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            string result = null;
 
-            if (this is ITextTemplatingComponents SubSonicComponents)
+            if (this is ITextTemplatingComponents Component)
             {
-                SubSonicComponents.Hierarchy = hierarchy;
-                SubSonicComponents.Callback = callback;
-                SubSonicComponents.TemplateFile = inputFilename;
+                Component.Hierarchy = hierarchy;
+                Component.Callback = callback;
+                Component.TemplateFile = inputFilename;
                 LastInvocationRaisedErrors = false;
-                SubSonicComponents.Host.SetFileExtension(SearchForLanguage(content, "C#") ? ".cs" : ".vb");
+                Component.Host.SetFileExtension(SearchForLanguage(content, "C#") ? ".cs" : ".vb");
 
-                try
+                TextWriter outputWindow = subSonicOutput.GetOutputTextWriter();
+
+                using (CompiledTemplate ct = Engine.CompileTemplate(content, this))
+                using (StringWriter output = new StringWriter(new StringBuilder()))
+                using (StringWriter error = new StringWriter(new StringBuilder()))
+                using (SplitOutputWriter splitOutput = new SplitOutputWriter(output, outputWindow))
+                using (SplitOutputWriter splitError = new SplitOutputWriter(error, outputWindow))
                 {
-                    bool success = false;
-                    IProcessTransformationRun processTransformationRun = null;
+                    string path = Path.Combine(
+                        Path.GetDirectoryName(typeof(SubSonicCoreVisualStudioAsyncPackage).Assembly.Location),
+                        "T4HostProcess",
+                        SubSonicMenuCommands.SubSonicHostProcessFIleName);
 
-                    try
+                    if (!File.Exists(path))
                     {
-                        runFactory = GetTransformationRunFactory();
-                    }
-                    catch(Exception)
-                    {
-                        try
-                        {
-                            runFactory = GetTransformationRunFactory();
-                        }
-                        catch(Exception ex)
-                        {
-                            object[] args = new[] { ex };
-                            LogError(false, string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.ExceptionStartingRunFactoryProcess, args), -1, -1, inputFilename);
-                            runFactory = null;
-                        }
+                        throw new FileNotFoundException(SubSonicCoreErrors.FileNotFound, SubSonicMenuCommands.SubSonicHostProcessFIleName);
                     }
 
-                    if (runFactory == null)
+                    Guid guid = Guid.NewGuid();
+
+                    ProcessStartInfo psi = new ProcessStartInfo(path, guid.ToString())
                     {
-                        this.LogError(false, SubSonicCoreErrors.ErrorStartingRunFactoryProcess, -1, -1, TemplateFile);
-                        ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
-                        args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
-                        args.Succeeded = false;
-                        this.OnTransformProcessCompleted(args);
-                        return null;
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    };
+
+                    RuntimeInfo runtime = RuntimeInfo.GetRuntime(package.HostOptions.RuntimeKind);
+
+                    if (runtime.Kind == RuntimeKind.NetCore)
+                    {
+                        psi.Arguments = $"\"{psi.FileName}\" {psi.Arguments}";
+                        psi.FileName = Path.GetFullPath(Path.Combine(runtime.RuntimeDirectory, "..", "..", "..", "dotnet"));
                     }
 
-                    if (SubSonicComponents.Engine is IProcessTextTemplatingEngine ProcessEngine)
-                    {
-                        processTransformationRun = ProcessEngine.PrepareTransformationRun(content, SubSonicComponents.Host, runFactory);
+                    var task = ProcessUtilities.StartProcess(psi, splitOutput, splitError, out System.Diagnostics.Process theT4Host, CancellationTokenSource.Token);
 
-                        if (processTransformationRun != null)
-                        {
-                            try
+                    if (!CancellationTokenSource.IsCancellationRequested)
+                    {   // we have not been cancelled so let's continue
+                        if (!debugging)
+                        {   // if we are not debugging we can wait for the process to finish
+                            await task.ConfigureAwait(false);
+
+                            var errors = new CompilerErrorCollection();
+
+                            async threadingTasks.Task ConsumeOutput(string s)
                             {
-                                foreach (EnvDTE.Process process in package.DTE.Debugger.LocalProcesses)
+                                using (var sw = new StringReader(s))
                                 {
-                                    if (process.ProcessID == this.transformProcess.Id)
+                                    string line;
+                                    while ((line = await sw.ReadLineAsync().ConfigureAwait(true)) != null)
                                     {
-                                        process.Attach();
-                                        success = true;
-                                        break;
+                                        CompilerError _error = null;//MSBuildErrorParser.TryParseLine(line);
+                                        if (_error != null)
+                                        {
+                                            errors.Add(_error);
+                                        }
                                     }
                                 }
                             }
-                            catch (Exception exception2)
-                            {
-                                object[] args = new object[] { exception2 };
-                                this.LogError(false, string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.ExceptionAttachingToRunFactoryProcess, args), -1, -1, inputFilename);
-                                success = false;
-                            }
+
+                            await ConsumeOutput(error.ToString()).ConfigureAwait(false);
+
+                            result = output.ToString();
                         }
                         else
-                        {
-                            ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
-                            args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
-                            args.Succeeded = false;
-                            this.OnTransformProcessCompleted(args);
-                            return null;
-                        }
-                    }
+                        {   // when debugging this function will not return anything but null.
+                            // the ui thread will be waiting for a callback from process to complete generation of file.
+                            transformProcess = theT4Host;
 
-                    if (success)
-                    {
-                        Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
-                        this.debugThread = new Thread(() => StartTransformation(inputFilename, processTransformationRun, uiDispatcher));
-                        this.debugThread.Start();
+                            return result;
+                        }
+
+
                     }
-                    else
-                    {
-                        this.LogError(false, SubSonicCoreErrors.ErrorAttachingToRunFactoryProcess, -1, -1, inputFilename);
-                        ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
-                        args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
-                        args.Succeeded = false;
-                        this.OnTransformProcessCompleted(args);
-                    }
-                }
-                catch (Exception exception3)
-                {
-                    this.LogError(false, exception3.ToString(), -1, -1, inputFilename);
-                    ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
-                    args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
-                    args.Succeeded = false;
-                    OnTransformProcessCompleted(args);
                 }
             }
 
-            return null;
+            return result;
         }
 
         
@@ -395,20 +388,25 @@ namespace SubSonic.Core.VisualStudio.Services
             }
         }
 
-        private TransformationRunFactory GetTransformationRunFactory()
+        private TransformationRunFactory GetTransformationRunFactory(ParsedTemplate pt)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            if (pt == null)
+            {
+                throw new ArgumentNullException(nameof(pt));
+            }
+
+            Guid guid = Guid.NewGuid();
 
             if (!isChannelRegistered)
             {
                 try
                 {
-                    throw new NotImplementedException();
+                    SubSonicTransformationRunFactory.RegisterChannel(guid);
                     isChannelRegistered = true;
                 }
                 catch(Exception ex)
                 {
-                    LogError(false, string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.RegisterIpcChannelFailed, ex), -1, -1, TemplateFile);
+                    pt.LogError(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.RegisterIpcChannelFailed, ex), new Location(TemplateFile));
                 }
             }
 
@@ -419,7 +417,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     transformProcess.Kill();
                 }
 
-                Guid guid = Guid.NewGuid();
+                
 
                 ProcessStartInfo startInfo = new ProcessStartInfo(Path.Combine(GetVSInstallDir(package.ApplicationRegistryRoot), "T4VSHostProcess.exe"), guid.ToString())
                 {
@@ -433,7 +431,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 }
                 catch(Exception ex)
                 {
-                    LogError(false, ex.ToString(), -1, -1, TemplateFile);
+                    pt.LogError(ex.ToString(), new Location(TemplateFile));
 
                     return default;
                 }

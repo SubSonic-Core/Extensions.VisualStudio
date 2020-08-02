@@ -68,5 +68,14 @@ namespace SubSonic.Core.VisualStudio {
                 return ResourceManager.GetString("DebugTemplate", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SubSonicT4HostProcess.dll.
+        /// </summary>
+        internal static string SubSonicHostProcessFIleName {
+            get {
+                return ResourceManager.GetString("SubSonicHostProcessFIleName", resourceCulture);
+            }
+        }
     }
 }

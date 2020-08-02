@@ -105,13 +105,145 @@
     </Content>
     <Content Include="AsyncPackages\Commands\Resources\SubSonicTemplatingCommand16x16.png" />
     <Content Include="Resources\caution.ico" />
-    <Content Include="SubSonicT4HostProcess.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <Content Include="T4HostProcess\H.Formatters.BinaryFormatter.dll">
       <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
     </Content>
-    <Content Include="SubSonicT4HostProcess.pdb">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <Content Include="T4HostProcess\H.Formatters.dll">
       <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\H.Pipes.AccessControl.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\H.Pipes.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Microsoft.CodeAnalysis.CSharp.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Microsoft.CodeAnalysis.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Microsoft.Extensions.DependencyInjection.Abstractions.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Microsoft.Extensions.DependencyInjection.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Microsoft.TeamFoundation.Common.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Microsoft.VisualStudio.Services.Common.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Microsoft.VisualStudio.Services.WebApi.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Microsoft.Win32.SystemEvents.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Mono.TextTemplating.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Mono.TextTemplating.Roslyn.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\NamedPipeServerStream.NetFrameworkVersion.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Newtonsoft.Json.Bson.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\Newtonsoft.Json.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\SubSonic.Core.VisualStudio.Common.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\SubSonic.Core.VisualStudio.Common.pdb">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\SubSonicT4HostProcess.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\SubSonicT4HostProcess.exe">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\SubSonicT4HostProcess.pdb">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\System.CodeDom.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\System.Configuration.ConfigurationManager.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\System.Data.SqlClient.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\System.Drawing.Common.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\System.Net.Http.Formatting.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\System.Security.Cryptography.ProtectedData.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\System.Security.Permissions.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\System.Windows.Extensions.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\System.Xml.XPath.XmlDocument.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\SubSonicCoreVisualStudioCommon.snk">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\SubSonicT4HostProcess.deps.json">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\SubSonicT4HostProcess.runtimeconfig.dev.json">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
+    </Content>
+    <Content Include="T4HostProcess\SubSonicT4HostProcess.runtimeconfig.json">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>T4HostProcess</VSIXSubPath>
     </Content>
     <VSCTCompile Include="AsyncPackages\Commands\Localization\SubSonicCoreVisualStudioAsyncPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
@@ -132,7 +264,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="16.6.2058" />
     <PackageReference Include="Mono.TextTemplating">
-      <Version>2.2.0-preview-0070-gfaf14e4391</Version>
+      <Version>2.2.0-preview-0074-g00f3f4bb2d</Version>
     </PackageReference>
     <PackageReference Include="System.ComponentModel.Composition">
       <Version>4.7.0</Version>
