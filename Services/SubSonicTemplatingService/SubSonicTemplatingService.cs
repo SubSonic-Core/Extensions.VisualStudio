@@ -28,6 +28,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using VSLangProj;
+using ThreadingTasks = System.Threading.Tasks;
 using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
 
 namespace SubSonic.Core.VisualStudio.Services
@@ -55,6 +56,7 @@ namespace SubSonic.Core.VisualStudio.Services
         private readonly SubSonicOutputWriter subSonicOutput;
         private AppDomain transformDomain;
         private System.Diagnostics.Process transformProcess;
+        private ThreadingTasks.Task<int> transformTask;
         private readonly Regex foundAssembly = new Regex(@"[A-Z|a-z]:\\", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 
         internal CancellationTokenSource CancellationTokenSource;
@@ -254,18 +256,21 @@ namespace SubSonic.Core.VisualStudio.Services
             }
             catch(IOException ex)
             {
-                LogError($"Could not read included file '{location}':\n{ex}");
+                _ = LogErrorAsync($"Could not read included file '{location}':\n{ex}");
             }
             return false;
         }
 
         public void LogErrors(CompilerErrorCollection errors)
         {
+            _ = LogErrorsAsync(errors);
+        }
+
+        public async ThreadingTasks.Task LogErrorsAsync(CompilerErrorCollection errors)
+        {
             foreach(CompilerError error in errors)
             {
-#pragma warning disable VSTHRD010
-                LogError(error.IsWarning, error.ErrorText, error.Line, error.Column, error.FileName);
-#pragma warning restore VSTHRD010
+               await LogErrorAsync(error.ErrorText, new Location(error.FileName, error.Line, error.Column), error.IsWarning);
             }
         }
 
@@ -330,7 +335,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     else
                     {
                         string fileNotFound = string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.FileNotFound, assemblyReference);
-                        LogError(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.AssemblyReferenceFailed, fileNotFound));
+                        _ = LogErrorAsync(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.AssemblyReferenceFailed, fileNotFound));
                     }
                 }
 

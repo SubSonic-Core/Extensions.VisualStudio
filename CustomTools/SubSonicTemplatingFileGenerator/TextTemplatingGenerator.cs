@@ -64,7 +64,11 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 base.SetWaitCursor();
                 callback = new TextTemplatingCallback();
                 ITextTemplating processor = TextTemplating;
-                CallContext.LogicalSetData(namespace_hint, base.FileNamespace);
+
+                if (Package.HostOptions.RuntimeKind != RuntimeKind.NetCore)
+                {
+                    CallContext.LogicalSetData(namespace_hint, base.FileNamespace);
+                }
 
                 try
                 {
@@ -85,7 +89,10 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 }
                 finally
                 {
-                    CallContext.FreeNamedDataSlot(namespace_hint);
+                    if (Package.HostOptions.RuntimeKind != RuntimeKind.NetCore)
+                    {
+                        CallContext.FreeNamedDataSlot(namespace_hint);
+                    }
                 }
             }
 

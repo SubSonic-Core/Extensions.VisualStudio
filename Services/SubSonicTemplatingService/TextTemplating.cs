@@ -2,32 +2,30 @@
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
+using Microsoft.Win32;
+using Mono.TextTemplating;
+using Mono.TextTemplating.CodeCompilation;
 using Mono.VisualStudio.TextTemplating;
 using Mono.VisualStudio.TextTemplating.VSHost;
-using Microsoft.Win32;
+using SubSonic.Core.Remoting;
+using SubSonic.Core.TextWriters;
+using SubSonic.Core.Utilities;
+using SubSonic.Core.VisualStudio.Common;
+using SubSonic.Core.VisualStudio.Host;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Runtime.Remoting;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Threading;
 using Thread = System.Threading.Thread;
-using threadingTasks = System.Threading.Tasks;
-using SubSonic.Core.VisualStudio.Host;
-using Mono.TextTemplating;
-using SubSonic.Core.TextWriters;
-using SubSonic.Core.Utilities;
-using System.Runtime.CompilerServices;
-using Microsoft.VisualStudio.Services.Common;
-using System.CodeDom.Compiler;
-using Mono.TextTemplating.CodeCompilation;
-using SubSonic.Core.VisualStudio.Common;
+using ThreadingTasks = System.Threading.Tasks;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -65,7 +63,7 @@ namespace SubSonic.Core.VisualStudio.Services
         public bool MustUnloadAfterProcessingTemplate { get; private set; }
         
 
-        public async threadingTasks.Task<string> ProcessTemplateAsync(string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false)
+        public async ThreadingTasks.Task<string> ProcessTemplateAsync(string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false)
         {
             string result = null;
 
@@ -77,51 +75,27 @@ namespace SubSonic.Core.VisualStudio.Services
                 LastInvocationRaisedErrors = false;
                 Component.Host.SetFileExtension(SearchForLanguage(content, "C#") ? ".cs" : ".vb");
 
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
                 TextWriter outputWindow = subSonicOutput.GetOutputTextWriter();
 
-                using (CompiledTemplate ct = Engine.CompileTemplate(content, this))
+                //using (CompiledTemplate ct = Engine.CompileTemplate(content, this))
                 using (StringWriter output = new StringWriter(new StringBuilder()))
                 using (StringWriter error = new StringWriter(new StringBuilder()))
                 using (SplitOutputWriter splitOutput = new SplitOutputWriter(output, outputWindow))
                 using (SplitOutputWriter splitError = new SplitOutputWriter(error, outputWindow))
                 {
-                    string path = Path.Combine(
-                        Path.GetDirectoryName(typeof(SubSonicCoreVisualStudioAsyncPackage).Assembly.Location),
-                        "T4HostProcess",
-                        SubSonicMenuCommands.SubSonicHostProcessFIleName);
-
-                    if (!File.Exists(path))
-                    {
-                        throw new FileNotFoundException(SubSonicCoreErrors.FileNotFound, SubSonicMenuCommands.SubSonicHostProcessFIleName);
-                    }
-
-                    Guid guid = Guid.NewGuid();
-
-                    ProcessStartInfo psi = new ProcessStartInfo(path, guid.ToString())
-                    {
-                        CreateNoWindow = true,
-                        UseShellExecute = false
-                    };
-
-                    RuntimeInfo runtime = RuntimeInfo.GetRuntime(package.HostOptions.RuntimeKind);
-
-                    if (runtime.Kind == RuntimeKind.NetCore)
-                    {
-                        psi.Arguments = $"\"{psi.FileName}\" {psi.Arguments}";
-                        psi.FileName = Path.GetFullPath(Path.Combine(runtime.RuntimeDirectory, "..", "..", "..", "dotnet"));
-                    }
-
-                    var task = ProcessUtilities.StartProcess(psi, splitOutput, splitError, out System.Diagnostics.Process theT4Host, CancellationTokenSource.Token);
-
+                    IProcessTransformationRunFactory factory = await GetTransformationRunFactoryAsync(splitOutput, splitError, CancellationTokenSource.Token);
+                    
                     if (!CancellationTokenSource.IsCancellationRequested)
                     {   // we have not been cancelled so let's continue
                         if (!debugging)
                         {   // if we are not debugging we can wait for the process to finish
-                            await task.ConfigureAwait(false);
+                            await ThreadHelper.JoinableTaskFactory.RunAsync(() => transformTask);
 
                             var errors = new CompilerErrorCollection();
 
-                            async threadingTasks.Task ConsumeOutput(string s)
+                            async ThreadingTasks.Task ConsumeOutput(string s)
                             {
                                 using (var sw = new StringReader(s))
                                 {
@@ -144,7 +118,6 @@ namespace SubSonic.Core.VisualStudio.Services
                         else
                         {   // when debugging this function will not return anything but null.
                             // the ui thread will be waiting for a callback from process to complete generation of file.
-                            transformProcess = theT4Host;
 
                             return result;
                         }
@@ -263,6 +236,8 @@ namespace SubSonic.Core.VisualStudio.Services
                 {
                     currentErrors.Clear();
                 }
+                LastInvocationRaisedErrors = false;
+                CancellationTokenSource = new CancellationTokenSource();
                 errorListProvider.Tasks.Clear();
                 if ((transformationSession == null) && !transformationSessionImplicitlyCreated)
                 {
@@ -308,11 +283,18 @@ namespace SubSonic.Core.VisualStudio.Services
             return flag;
         }
 
-        private void LogError(string message, bool isWarning = false)
+        private async ThreadingTasks.Task LogErrorAsync(string message, bool isWarning = false)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            LogError(isWarning, message, -1, -1, TemplateFile);
+            LogError(isWarning, message, -1, -1, null);
+        }
+
+        private async ThreadingTasks.Task LogErrorAsync(string message, Location location, bool isWarning = false)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            LogError(isWarning, message, location.Line, location.Column, location.FileName);
         }
 
         private void LogError(bool isWarning, string message, int line, int column, string fileName)
@@ -388,25 +370,20 @@ namespace SubSonic.Core.VisualStudio.Services
             }
         }
 
-        private TransformationRunFactory GetTransformationRunFactory(ParsedTemplate pt)
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+        private async ThreadingTasks.Task<IProcessTransformationRunFactory> GetTransformationRunFactoryAsync(TextWriter output, TextWriter error, CancellationToken cancellationToken)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
-            if (pt == null)
-            {
-                throw new ArgumentNullException(nameof(pt));
-            }
-
-            Guid guid = Guid.NewGuid();
-
             if (!isChannelRegistered)
             {
                 try
                 {
-                    SubSonicTransformationRunFactory.RegisterChannel(guid);
-                    isChannelRegistered = true;
+                    isChannelRegistered = SubSonicTransformationRunFactory.RegisterIpcChannel();
                 }
                 catch(Exception ex)
                 {
-                    pt.LogError(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.RegisterIpcChannelFailed, ex), new Location(TemplateFile));
+                    _ = LogErrorAsync(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.RegisterIpcChannelFailed, ex), new Location(TemplateFile));
+                    CancellationTokenSource.Cancel(true);
                 }
             }
 
@@ -417,48 +394,80 @@ namespace SubSonic.Core.VisualStudio.Services
                     transformProcess.Kill();
                 }
 
-                
+                string path = Path.Combine(
+                        Path.GetDirectoryName(typeof(SubSonicCoreVisualStudioAsyncPackage).Assembly.Location),
+                        "T4HostProcess",
+                        SubSonicMenuCommands.SubSonicHostProcessFIleName);
 
-                ProcessStartInfo startInfo = new ProcessStartInfo(Path.Combine(GetVSInstallDir(package.ApplicationRegistryRoot), "T4VSHostProcess.exe"), guid.ToString())
+                if (!File.Exists(path))
                 {
+                    throw new FileNotFoundException(SubSonicCoreErrors.FileNotFound, SubSonicMenuCommands.SubSonicHostProcessFIleName);
+                }
+
+                Guid guid = Guid.NewGuid();
+
+                ProcessStartInfo psi = new ProcessStartInfo(path, guid.ToString())
+                {
+                    CreateNoWindow = true,
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    RedirectStandardError = error != null,
+                    RedirectStandardOutput = output != null
                 };
+
+                RuntimeInfo runtime = RuntimeInfo.GetRuntime(package.HostOptions.RuntimeKind);
+
+                if (runtime.Kind == RuntimeKind.NetCore)
+                {
+                    psi.Arguments = $"\"{psi.FileName}\" {psi.Arguments}";
+                    psi.FileName = Path.GetFullPath(Path.Combine(runtime.RuntimeDirectory, "..", "..", "..", "dotnet"));
+                }
 
                 try
                 {
-                    transformProcess = System.Diagnostics.Process.Start(startInfo);
+                    transformTask = ProcessUtilities.StartProcess(psi, output, error, out System.Diagnostics.Process theT4Host, cancellationToken);
+
+                    transformProcess = theT4Host;
                 }
                 catch(Exception ex)
                 {
-                    pt.LogError(ex.ToString(), new Location(TemplateFile));
+                    _ = LogErrorAsync(ex.ToString(), new Location(TemplateFile));
 
                     return default;
                 }
 
-                Stopwatch stopwatch = Stopwatch.StartNew();
+                //Stopwatch stopwatch = Stopwatch.StartNew();
 
-                while(true)
+                while(!cancellationToken.IsCancellationRequested)
                 {
-                    if ((this.runFactory != null) || (stopwatch.ElapsedMilliseconds >= 0x2710L))
-                    {
-                        stopwatch.Stop();
-                        break;
-                    }
+                    //if ((this.runFactory != null) || (stopwatch.ElapsedMilliseconds >= 0x2710L))
+                    //{
+                    //    stopwatch.Stop();
+                    //    break;
+                    //}
                     Thread.Sleep(10);
                     try
                     {
-                        runFactory = (TransformationRunFactory)Activator.GetObject(typeof(TransformationRunFactory), "ipc://TransformationRunFactoryService" + guid.ToString() + "/TransformationRunFactory");
+#if !NETSTANDARD
+                        runFactory = (TransformationRunFactory)Activator.GetObject(typeof(TransformationRunFactory), $"ipc://TransformationRunFactoryService{guid}/TransformationRunFactory");
+#else 
+                        runFactory = ChannelServices.Connect<TransformationRunFactory>($"ipc://TransformationRunFactoryService{guid}/TransformationRunFactory");
+#endif
+
                         if (!this.RunFactoryIsAlive())
                         {
                             this.runFactory = null;
                         }
                     }
-                    catch (RemotingException)
+                    catch (SubSonicRemotingException)
                     {
                         this.runFactory = null;
                     }
                 }
+
+                //if (stopwatch.IsRunning)
+                //{
+                //    stopwatch.Stop();
+                //}
             }
 
             return runFactory;

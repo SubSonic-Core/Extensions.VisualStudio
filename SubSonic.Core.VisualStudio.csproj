@@ -264,9 +264,12 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="16.6.2058" />
     <PackageReference Include="Mono.TextTemplating">
-      <Version>2.2.0-preview-0074-g00f3f4bb2d</Version>
+      <Version>2.2.0-preview-0076-g585511d476</Version>
     </PackageReference>
     <PackageReference Include="System.ComponentModel.Composition">
+      <Version>4.7.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Security.AccessControl">
       <Version>4.7.0</Version>
     </PackageReference>
   </ItemGroup>

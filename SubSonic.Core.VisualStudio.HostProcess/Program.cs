@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SubSonic.Core.VisualStudio.HostProcess.Client;
+using System;
+using System.Threading.Tasks;
 
 namespace SubSonic.Core.VisualStudio.HostProcess
 {
@@ -6,7 +8,14 @@ namespace SubSonic.Core.VisualStudio.HostProcess
     {
         static void Main(string[] args)
         {
-            Console.Out.WriteLine("Hello World!");
+            var client = new NamedPipeClient(args);
+
+            _ = client.InitializeAsync();
+
+            while (client.IsRunning)
+            {
+                Task.Delay(10).Wait();
+            }
         }
     }
 }

@@ -268,6 +268,7 @@ namespace SubSonic.Core.VisualStudio
             if (subSonicTemplatingService != null)
             {
                 subSonicTemplatingService.LastInvocationRaisedErrors = false;
+                subSonicTemplatingService.CancellationTokenSource = new CancellationTokenSource();
             }
         }
 

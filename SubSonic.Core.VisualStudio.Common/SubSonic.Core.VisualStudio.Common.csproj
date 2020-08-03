@@ -1,19 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net472;netstandard2.0;netstandard2.1</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>SubSonicCoreVisualStudioCommon.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="H.Pipes" Version="1.13.1" />
-    <PackageReference Include="H.Pipes.AccessControl" Version="1.13.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.153.0" />
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0074-g00f3f4bb2d" />
-    <PackageReference Include="Mono.TextTemplating.Roslyn" Version="2.2.0-preview-0074-g00f3f4bb2d" />
+    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0076-g585511d476" />
+    <PackageReference Include="Mono.TextTemplating.Roslyn" Version="2.2.0-preview-0076-g585511d476" />
     <PackageReference Include="System.CodeDom" Version="4.7.0" />
+    <PackageReference Condition="'$(TargetFramework)'=='net472'" Include="System.Reactive.Runtime.Remoting" Version="4.4.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +24,10 @@
 
   <ItemGroup>
     <Folder Include="SubSonic.Core.Collections\" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net472'">
+    <Reference Include="System.Runtime.Remoting" />
   </ItemGroup>
 
 </Project>
