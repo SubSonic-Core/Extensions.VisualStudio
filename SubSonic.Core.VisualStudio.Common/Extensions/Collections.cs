@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SubSonic.Core.VisualStudio.Common
 {
-    public static class Extensions
+    public static partial class Extensions
     {
         public static void AddIfNotExist<TType>(this ICollection<TType> collection, TType element)
         {

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0076-g585511d476" />
+    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0083-g3c6b59ffd5" />
   </ItemGroup>
 
   <ItemGroup>

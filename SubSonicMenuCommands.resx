@@ -120,7 +120,7 @@
   <data name="DebugTemplate" xml:space="preserve">
     <value>Debug SubSonic Template</value>
   </data>
-  <data name="SubSonicHostProcessFIleName" xml:space="preserve">
+  <data name="SubSonicHostProcessFileName" xml:space="preserve">
     <value>SubSonicT4HostProcess.dll</value>
   </data>
 </root>

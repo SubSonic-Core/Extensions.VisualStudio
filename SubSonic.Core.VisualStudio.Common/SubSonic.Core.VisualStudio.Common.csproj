@@ -7,13 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="H.Pipes" Version="1.13.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.153.0" />
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0076-g585511d476" />
-    <PackageReference Include="Mono.TextTemplating.Roslyn" Version="2.2.0-preview-0076-g585511d476" />
+    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0083-g3c6b59ffd5" />
+    <PackageReference Include="Mono.TextTemplating.Roslyn" Version="2.2.0-preview-0083-g3c6b59ffd5" />
+    <PackageReference Include="ServiceWire" Version="5.3.4-preview-0002-ge35aeba7bf" />
     <PackageReference Include="System.CodeDom" Version="4.7.0" />
-    <PackageReference Condition="'$(TargetFramework)'=='net472'" Include="System.Reactive.Runtime.Remoting" Version="4.4.1" />
   </ItemGroup>
 
   <ItemGroup>

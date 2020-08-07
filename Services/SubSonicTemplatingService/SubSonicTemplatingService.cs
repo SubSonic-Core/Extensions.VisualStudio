@@ -7,7 +7,6 @@ using Mono.TextTemplating;
 using Mono.TextTemplating.CodeCompilation;
 using Mono.VisualStudio.TextTemplating;
 using SubSonic.Core.VisualStudio.Common;
-using SubSonic.Core.VisualStudio.Forms;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
 using System.CodeDom.Compiler;
@@ -28,8 +27,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using VSLangProj;
-using ThreadingTasks = System.Threading.Tasks;
 using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
+using ThreadingTasks = System.Threading.Tasks;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -56,7 +55,6 @@ namespace SubSonic.Core.VisualStudio.Services
         private readonly SubSonicOutputWriter subSonicOutput;
         private AppDomain transformDomain;
         private System.Diagnostics.Process transformProcess;
-        private ThreadingTasks.Task<int> transformTask;
         private readonly Regex foundAssembly = new Regex(@"[A-Z|a-z]:\\", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 
         internal CancellationTokenSource CancellationTokenSource;

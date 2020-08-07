@@ -1,5 +1,9 @@
-﻿using SubSonic.Core.VisualStudio.HostProcess.Client;
-using System;
+﻿using Microsoft.VisualStudio.Services.NameResolution;
+using Mono.VisualStudio.TextTemplating.VSHost;
+using ServiceWire;
+using ServiceWire.NamedPipes;
+using SubSonic.Core.VisualStudio.HostProcess.Server;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SubSonic.Core.VisualStudio.HostProcess
@@ -8,13 +12,22 @@ namespace SubSonic.Core.VisualStudio.HostProcess
     {
         static void Main(string[] args)
         {
-            var client = new NamedPipeClient(args);
+            var logger = new Logger(logLevel: LogLevel.Debug);
+            var stats = new Stats();
 
-            _ = client.InitializeAsync();
+            var pipename = TransformationRunFactory.TransformationRunFactoryService;
 
-            while (client.IsRunning)
+            using (TransformationRunFactoryService service = new TransformationRunFactoryService())
+            using (NpHost host = new NpHost(pipename, logger, stats))
             {
-                Task.Delay(10).Wait();
+                host.AddService<ITransformationRunFactoryService>(service);
+
+                host.Open();
+
+                while(service.IsRunning)
+                {
+                    Thread.Sleep(10);
+                }
             }
         }
     }
