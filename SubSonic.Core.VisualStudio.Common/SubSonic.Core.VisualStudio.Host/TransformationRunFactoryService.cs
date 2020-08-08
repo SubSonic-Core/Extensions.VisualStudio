@@ -20,7 +20,7 @@ namespace SubSonic.Core.VisualStudio.Host
         public TransformationRunFactoryService(Uri serviceUri)
             : base(serviceUri) { }
         
-        public IProcessTransformationRunFactory TransformationRunFactory(Guid id)
+        public virtual IProcessTransformationRunFactory TransformationRunFactory(Guid id)
         {
             IProcessTransformationRunFactory factory = new TransformationRunFactory(id)
             {
