@@ -15,7 +15,7 @@ namespace SubSonic.Core.VisualStudio.Host
     {
         private bool disposedValue;
 
-        internal readonly static ConcurrentDictionary<Guid, IProcessTransformationRunFactory> runFactories = new ConcurrentDictionary<Guid, IProcessTransformationRunFactory>();
+        protected readonly static ConcurrentDictionary<Guid, IProcessTransformationRunFactory> runFactories = new ConcurrentDictionary<Guid, IProcessTransformationRunFactory>();
 
         public TransformationRunFactoryService(Uri serviceUri)
             : base(serviceUri) { }

@@ -267,7 +267,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Mono.TextTemplating">
-      <Version>2.2.0-preview-0095-gf19f7ff550</Version>
+      <Version>2.2.0-preview-0096-g7b29bb1375</Version>
     </PackageReference>
     <PackageReference Include="System.ComponentModel.Composition">
       <Version>4.7.0</Version>

@@ -2,6 +2,7 @@
 using ServiceWire;
 using ServiceWire.NamedPipes;
 using SubSonic.Core.VisualStudio.Host;
+using SubSonic.Core.VisualStudio.HostProcess.Server;
 using System;
 using System.Threading;
 
@@ -16,7 +17,7 @@ namespace SubSonic.Core.VisualStudio.HostProcess
 
             var pipename = TransformationRunFactory.TransformationRunFactoryService;
 
-            using (TransformationRunFactoryService service = new TransformationRunFactoryService(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}")))
+            using (RemoteTransformationRunFactoryService service = new RemoteTransformationRunFactoryService(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}")))
             using (NpHost host = new NpHost(pipename, logger, stats))
             {
                 host.AddService<ITransformationRunFactoryService>(service);
