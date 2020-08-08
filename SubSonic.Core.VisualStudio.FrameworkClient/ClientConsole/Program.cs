@@ -1,5 +1,6 @@
 ﻿using Mono.VisualStudio.TextTemplating.VSHost;
 using ServiceWire.NamedPipes;
+using SubSonic.Core.VisualStudio.Host;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace ClientConsole
         {
             using(var npClient = new NpClient<ITransformationRunFactoryService>(new NpEndPoint(TransformationRunFactory.TransformationRunFactoryService)))
             {
-                var runFactory = npClient.Proxy.GetTransformationRunFactory(Guid.NewGuid().ToString());
+                var runFactory = npClient.Proxy.TransformationRunFactory(Guid.NewGuid());
             }
         }
     }

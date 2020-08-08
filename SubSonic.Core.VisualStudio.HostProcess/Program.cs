@@ -1,10 +1,9 @@
-﻿using Microsoft.VisualStudio.Services.NameResolution;
-using Mono.VisualStudio.TextTemplating.VSHost;
+﻿using Mono.VisualStudio.TextTemplating.VSHost;
 using ServiceWire;
 using ServiceWire.NamedPipes;
-using SubSonic.Core.VisualStudio.HostProcess.Server;
+using SubSonic.Core.VisualStudio.Host;
+using System;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace SubSonic.Core.VisualStudio.HostProcess
 {
@@ -17,7 +16,7 @@ namespace SubSonic.Core.VisualStudio.HostProcess
 
             var pipename = TransformationRunFactory.TransformationRunFactoryService;
 
-            using (TransformationRunFactoryService service = new TransformationRunFactoryService())
+            using (TransformationRunFactoryService service = new TransformationRunFactoryService(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}")))
             using (NpHost host = new NpHost(pipename, logger, stats))
             {
                 host.AddService<ITransformationRunFactoryService>(service);

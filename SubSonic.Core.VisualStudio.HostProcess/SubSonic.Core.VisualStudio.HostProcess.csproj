@@ -9,11 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0083-g3c6b59ffd5" />
+    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0095-gf19f7ff550" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SubSonic.Core.VisualStudio.Common\SubSonic.Core.VisualStudio.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Server\" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

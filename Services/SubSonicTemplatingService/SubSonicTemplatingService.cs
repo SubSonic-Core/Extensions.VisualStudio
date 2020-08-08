@@ -6,6 +6,8 @@ using Microsoft.VisualStudio.Threading;
 using Mono.TextTemplating;
 using Mono.TextTemplating.CodeCompilation;
 using Mono.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating.VSHost;
+using SubSonic.Core.Remoting;
 using SubSonic.Core.VisualStudio.Common;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
@@ -17,8 +19,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Remoting;
-using System.Runtime.Remoting.Lifetime;
 using System.Security;
 using System.Security.Policy;
 using System.Text;
@@ -583,13 +583,7 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 try
                 {
-                    if (transformDomain.GetLifetimeService() is ILease lease)
-                    {
-                        if (lease.CurrentState == LeaseState.Active)
-                        {
-                            AppDomain.Unload(transformDomain);
-                        }
-                    }
+                    AppDomain.Unload(transformDomain);
                 }
                 catch(AppDomainUnloadedException)
                 {
@@ -679,7 +673,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     package.DTE.Events.SolutionEvents.AfterClosing -= SolutionEvents_AfterClosing;
                     errorListProvider.Dispose();
                     subSonicOutput.Dispose();
-                    RemotingServices.Disconnect(this);
+                    RemotingServices.Disconnect(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}"));
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer

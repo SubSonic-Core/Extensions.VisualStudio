@@ -9,13 +9,18 @@ using Mono.VisualStudio.TextTemplating;
 using Mono.VisualStudio.TextTemplating.VSHost;
 using ServiceWire;
 using ServiceWire.NamedPipes;
+using SubSonic.Core.Remoting;
+using SubSonic.Core.Remoting.Channels;
+using SubSonic.Core.Remoting.Channels.Ipc.NamedPipes;
+using SubSonic.Core.Remoting.Contracts;
+using SubSonic.Core.Remoting.Serialization;
 using SubSonic.Core.TextWriters;
-using SubSonic.Core.Utilities;
 using SubSonic.Core.VisualStudio.Common;
 using SubSonic.Core.VisualStudio.Host;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
 using System.CodeDom.Compiler;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -30,6 +35,9 @@ using ThreadingTasks = System.Threading.Tasks;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
+    using RemotingServices = Remoting.RemotingServices;
+    using Utilities = SubSonic.Core.Utilities;
+
     [Serializable]
     public partial class SubSonicTemplatingService
         : IProcessTextTemplating
@@ -118,17 +126,17 @@ namespace SubSonic.Core.VisualStudio.Services
                     if (!CancellationTokenSource.IsCancellationRequested)
                     {   // we have not been cancelled so let's continue
                         // we need to prepare the transformation and send the important parts over to the T4 Host Process
-                        if (Engine.PrepareTransformationRun(content, Component.Host, runFactory) is IProcessTransformationRun transformationRun)
+                        if (Engine.PrepareTransformationRunner(content, Component.Host, runFactory) is IProcessTransformationRunner runner)
                         {
                             if (!debugging)
                             {   // if we are not debugging we can wait for the process to finish
                                 // and we do not need to attach to the host process.
 
-                                result = transformationRun.PerformTransformation();
+                                result = runner.PerformTransformation();
 
-                                if (transformationRun.Errors.HasErrors)
+                                if (runner.Errors.HasErrors)
                                 {
-                                    await LogErrorsAsync(transformationRun.Errors);
+                                    await LogErrorsAsync(runner.Errors);
                                 }
                             }
                             else
@@ -156,7 +164,7 @@ namespace SubSonic.Core.VisualStudio.Services
                                 if (success)
                                 {
                                     Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
-                                    this.debugThread = new Thread(() => StartTransformation(inputFilename, transformationRun, uiDispatcher));
+                                    this.debugThread = new Thread(() => StartTransformation(inputFilename, runner, uiDispatcher));
                                     this.debugThread.Start();
                                 }
                                 else
@@ -427,10 +435,22 @@ namespace SubSonic.Core.VisualStudio.Services
             }
         }
 
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         private async ThreadingTasks.Task<IProcessTransformationRunFactory> GetTransformationRunFactoryAsync(TextWriter output, TextWriter error, CancellationToken cancellationToken)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
+            try
+            {
+                Hashtable properties = new Hashtable
+                {
+                    [nameof(IChannel.ChannelName)] = TransformationRunFactory.TransformationRunFactoryService
+                };
+
+                this.isChannelRegistered = ChannelServices.RegisterChannel(new NamedPipeChannel<ITransformationRunFactoryService>(properties, new BinarySerializationProvider()));
+            }
+            catch(SubSonicRemotingException ex)
+            {
+                await LogErrorAsync(ex.Message);
+            }
+
             if ((transformProcess == null) || (!RunFactoryIsAlive() || transformProcess.HasExited))
             {
                 if (transformProcess != null && !transformProcess.HasExited)
@@ -468,7 +488,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
                 try
                 {
-                    //_ = ProcessUtilities.StartProcess(psi, output, error, out System.Diagnostics.Process theT4Host, cancellationToken);
+                    //_ = Utilities.StartProcess(psi, output, error, out System.Diagnostics.Process theT4Host, cancellationToken);
 
                     //transformProcess = theT4Host;
                 }
@@ -479,60 +499,29 @@ namespace SubSonic.Core.VisualStudio.Services
                     return default;
                 }
 
-                npClient = new NpClient<ITransformationRunFactoryService>(new NpEndPoint(TransformationRunFactory.TransformationRunFactoryService), new DefaultSerializer());
-
-                Stopwatch stopwatch = Stopwatch.StartNew();
-
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    if ((this.runFactory != null) || (stopwatch.ElapsedMilliseconds >= 0x2710L))
-                    {
-                        stopwatch.Stop();
-                        break;
-                    }
-                    Thread.Sleep(10);
-                    try
-                    {
-                        runFactory = npClient.Proxy.GetTransformationRunFactory(guid.ToString());
-                        //runFactory = (TransformationRunFactory)Activator.GetObject(typeof(TransformationRunFactory), $"ipc://TransformationRunFactoryService{guid}/TransformationRunFactory");
-
-                        if (!this.RunFactoryIsAlive())
-                        {
-                            this.runFactory = null;
-                        }
-                    }
-                    catch (RemotingException)
-                    {
-                        this.runFactory = null;
-                    }
-                }
-
-                if (stopwatch.IsRunning)
-                {
-                    stopwatch.Stop();
-                }
+                runFactory = await RemotingServices.ConnectAsync<IProcessTransformationRunFactory>(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}/{TransformationRunFactory.TransformationRunFactoryMethod}/{Guid.NewGuid()}"));
             }
 
             return runFactory;
         }
 
-        private void StartTransformation(string filename, IProcessTransformationRun transformationRun, Dispatcher uiDispatcher)
+        private void StartTransformation(string filename, IProcessTransformationRunner runner, Dispatcher uiDispatcher)
         {
             bool success = false;
             string processOutput = SubSonicCoreErrors.DebugErrorOutput;
             try
             {
-                processOutput = this.runFactory.RunTransformation(transformationRun);
-                success = !transformationRun.Errors.HasErrors;
-                this.LogErrors(transformationRun.Errors);
-            }
-            catch (RemotingException exception)
-            {
-                this.LogError(false, exception.ToString(), -1, -1, filename);
+                processOutput = this.runFactory.PerformTransformation(runner.RunnerId);
+                success = !runner.Errors.HasErrors;
+                this.LogErrors(runner.Errors);
             }
             catch (ThreadAbortException)
             {
                 success = true;
+            }
+            catch (Exception exception)
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () => await LogErrorAsync(exception.ToString(), new Location(filename)));
             }
             finally
             {
@@ -594,16 +583,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
         private bool RunFactoryIsAlive()
         {
-            try
-            {
-                runFactory?.ToString();
-            }
-            catch(RemotingException)
-            {
-                runFactory = null;
-            }
-
-            return runFactory != null;
+            return runFactory?.IsAlive ?? default;
         }
     }
 }
