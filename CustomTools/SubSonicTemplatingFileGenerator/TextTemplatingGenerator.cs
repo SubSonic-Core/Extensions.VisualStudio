@@ -5,12 +5,9 @@ using Mono.TextTemplating;
 using Mono.TextTemplating.CodeCompilation;
 using Mono.VisualStudio.TextTemplating;
 using Mono.VisualStudio.TextTemplating.VSHost;
-using SubSonic.Core.VisualStudio.Common;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
 using BaseCodeGeneratorWithSite = Microsoft.VisualStudio.TextTemplating.VSHost.BaseCodeGeneratorWithSite;
@@ -62,37 +59,24 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                     return Array.Empty<byte>();
                 }
                 base.SetWaitCursor();
+
                 callback = new TextTemplatingCallback();
-                ITextTemplating processor = TextTemplating;
 
-                if (Package.HostOptions.RuntimeKind != RuntimeKind.NetCore)
+                ITextTemplating processor = GetTextTemplatingAsync().Result;
+
+                if (processor == null)
                 {
-                    CallContext.LogicalSetData(namespace_hint, base.FileNamespace);
+                    throw new InvalidOperationException(SubSonicCoreErrors.TextTemplatingUnavailable);
                 }
 
-                try
+                processor.BeginErrorSession();
+
+                if (GetService(typeof(IVsHierarchy)) is IVsHierarchy hierarchy)
                 {
-                    if (processor == null)
-                    {
-                        throw new InvalidOperationException(SubSonicCoreErrors.TextTemplatingUnavailable);
-                    }
+                    result = ProcessTemplate(inputFileName, inputFileContent, processor, hierarchy);
 
-                    processor.BeginErrorSession();
-
-                    if (GetService(typeof(IVsHierarchy)) is IVsHierarchy hierarchy)
-                    {
-                        result = ProcessTemplate(inputFileName, inputFileContent, processor, hierarchy);
-
-                        callback.Errors |= processor.EndErrorSession();
-                        MarkProjectForTextTemplating(hierarchy);
-                    }
-                }
-                finally
-                {
-                    if (Package.HostOptions.RuntimeKind != RuntimeKind.NetCore)
-                    {
-                        CallContext.FreeNamedDataSlot(namespace_hint);
-                    }
+                    callback.Errors |= processor.EndErrorSession();
+                    MarkProjectForTextTemplating(hierarchy);
                 }
             }
 
@@ -145,29 +129,21 @@ namespace SubSonic.Core.VisualStudio.CustomTools
             return bytes;
         }
 
-        protected virtual ITextTemplating TextTemplating
+        protected virtual async Task<ITextTemplating> GetTextTemplatingAsync()
         {
-            get
+            ITextTemplating processor = await GetServiceAsync<SSubSonicTemplatingService, ITextTemplating>();
+
+            if (processor is ITextTemplatingEngineHost host)
             {
-                ITextTemplating processor = null;
+                host.StandardAssemblyReferences.AddIfNotExist("System.Data");
+                host.StandardAssemblyReferences.AddIfNotExist("System.Data.Common");
+                host.StandardAssemblyReferences.AddIfNotExist("System.ComponentModel");
+                host.StandardAssemblyReferences.AddIfNotExist("SubSonic.Core.DataAccessLayer");
 
-                ThreadHelper.JoinableTaskFactory.Run(async delegate
-                {
-                    processor = await GetServiceAsync<SSubSonicTemplatingService, ITextTemplating>();
-                });
-
-                if (processor is ITextTemplatingEngineHost host)
-                {
-                    host.StandardAssemblyReferences.AddIfNotExist("System.Data");
-                    host.StandardAssemblyReferences.AddIfNotExist("System.Data.Common");
-                    host.StandardAssemblyReferences.AddIfNotExist("System.ComponentModel");
-                    host.StandardAssemblyReferences.AddIfNotExist("SubSonic.Core.DataAccessLayer");
-
-                    host.StandardImports.AddIfNotExist("SubSonic");
-                }
-
-                return processor;
+                host.StandardImports.AddIfNotExist("SubSonic");
             }
+
+            return processor;
         }
 
         private void MarkProjectForTextTemplating(IVsHierarchy hierarchy)
@@ -186,11 +162,9 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
         private IVsProjectStartupServices GetStartUpServices(IVsHierarchy hierarchy)
         {
-            object obj2;
-
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            if (ErrorHandler.Succeeded(hierarchy.GetProperty(0xfffffffe, -2040, out obj2)))
+            if (ErrorHandler.Succeeded(hierarchy.GetProperty(0xfffffffe, -2040, out object obj2)))
             {
                 return obj2 as IVsProjectStartupServices;
             }
@@ -201,16 +175,14 @@ namespace SubSonic.Core.VisualStudio.CustomTools
         private bool StartupServicesReferencesService(IVsProjectStartupServices startup, Guid serviceId)
         {
             bool success = false;
-            IEnumProjectStartupServices services = null;
 
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            ErrorHandler.ThrowOnFailure(startup.GetStartupServiceEnum(out services));
-            uint num = 0;
+            ErrorHandler.ThrowOnFailure(startup.GetStartupServiceEnum(out IEnumProjectStartupServices services));
             Guid[] guidArray = new Guid[1];
             while (true)
             {
-                int hr = services.Next(1, guidArray, out num);
+                int hr = services.Next(1, guidArray, out uint num);
                 ErrorHandler.ThrowOnFailure(hr);
                 if ((num == 1) && (guidArray[0].CompareTo(serviceId) == 0))
                 {
@@ -238,13 +210,10 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 }
                 else
                 {
-                    ThreadHelper.JoinableTaskFactory.Run(async () =>
+                    if (service is IProcessTextTemplating process)
                     {
-                        if (service is IProcessTextTemplating process)
-                        {
-                            content = await process.ProcessTemplateAsync(inputFileName, inputFileContent, callback, hierarchy);
-                        }
-                    });
+                        content = process.ProcessTemplateAsync(inputFileName, inputFileContent, callback, hierarchy).Result;
+                    }
                 }
             }
             return content;

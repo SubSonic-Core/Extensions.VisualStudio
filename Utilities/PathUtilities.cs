@@ -13,7 +13,7 @@ namespace SubSonic.Core.VisualStudio.Utilities
 {
     public static class PathHelper
     {
-        private static Regex vsMacroAndPropertyRegEx = new Regex(@" \$\(  (?<name>\w+) \) ", RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+        private static readonly Regex vsMacroAndPropertyRegEx = new Regex(@" \$\(  (?<name>\w+) \) ", RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled | RegexOptions.ExplicitCapture);
 
         public static async Task<string> ExpandVsMacroVariablesAsync(string path, IVsHierarchy hierarchy)
         {
@@ -21,7 +21,9 @@ namespace SubSonic.Core.VisualStudio.Utilities
 
             if (hierarchy is IVsBuildMacroInfo buildMacroInfo)
             {
+#pragma warning disable IDE0039 // Use local function
                 MatchEvaluator evaluator = delegate (Match m)
+#pragma warning restore IDE0039 // Use local function
                 {
                     ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -63,7 +65,9 @@ namespace SubSonic.Core.VisualStudio.Utilities
                     return string.Empty;
                 });
 
+#pragma warning disable IDE0039 // Use local function
                 MatchEvaluator evaluator = delegate (Match m)
+#pragma warning restore IDE0039 // Use local function
                 {
                     ThreadHelper.ThrowIfNotOnUIThread();
 

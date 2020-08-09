@@ -34,16 +34,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Mono.TextTemplating, Version=2.2.0.0, Culture=neutral, PublicKeyToken=4fa72d50da25cb30, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Mono.TextTemplating.2.2.0-preview-0096-g7b29bb1375\lib\net45\Mono.TextTemplating.dll</HintPath>
+      <HintPath>..\..\packages\Mono.TextTemplating.2.2.0-preview-0097-g53475be1dc\lib\net45\Mono.TextTemplating.dll</HintPath>
     </Reference>
     <Reference Include="ServiceWire, Version=5.3.0.0, Culture=neutral, PublicKeyToken=04ff4e57e61e2a6f, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\ServiceWire.5.3.4-preview-0002-ge35aeba7bf\lib\net462\ServiceWire.dll</HintPath>
+      <HintPath>..\..\packages\ServiceWire.5.3.5-preview-0010-gc7f9e6b6cd\lib\net462\ServiceWire.dll</HintPath>
     </Reference>
-    <Reference Include="SubSonic.Core.Extensions, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\SubSonic.Core.Extensions.1.0.0-preview-0025-ga9e9d8ea7a\lib\netstandard2.0\SubSonic.Core.Extensions.dll</HintPath>
+    <Reference Include="SubSonic.Core.Extensions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9ac333739266886f, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\SubSonic.Core.Extensions.1.0.0-preview-0032-gb548e02158\lib\netstandard2.0\SubSonic.Core.Extensions.dll</HintPath>
     </Reference>
-    <Reference Include="SubSonic.Core.Remoting, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\SubSonic.Core.Remoting.1.0.0-preview-0025-ga9e9d8ea7a\lib\netstandard2.0\SubSonic.Core.Remoting.dll</HintPath>
+    <Reference Include="SubSonic.Core.Remoting, Version=1.0.0.0, Culture=neutral, PublicKeyToken=de7335cca968174f, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\SubSonic.Core.Remoting.1.0.0-preview-0032-gb548e02158\lib\netstandard2.0\SubSonic.Core.Remoting.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">

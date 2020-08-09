@@ -27,7 +27,7 @@ namespace SubSonic.Core.VisualStudio.Templating
 
         public async Task InitializeAsync(string title, CancellationToken cancellationToken)
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
             if (provider.GetService(typeof(SVsOutputWindow)) is IVsOutputWindow output)
             {
@@ -42,9 +42,7 @@ namespace SubSonic.Core.VisualStudio.Templating
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            IVsOutputWindowPane pane;
-
-            if (_output.GetPane(ref guid, out pane) == VSConstants.S_OK)
+            if (_output.GetPane(ref guid, out IVsOutputWindowPane pane) == VSConstants.S_OK)
             {
                 pane.Clear();
 
@@ -58,26 +56,24 @@ namespace SubSonic.Core.VisualStudio.Templating
 
         public override void Write(string value)
         {
-            WriteAsync(value);
+            _ = WriteAsync(value);
         }
 
         public override void WriteLine()
         {
-            WriteLineAsync();
+            _ = WriteLineAsync();
         }
 
         public override void WriteLine(string value)
         {
-            WriteLineAsync(value);
+            _ = WriteLineAsync(value);
         }
 
         public override async System.Threading.Tasks.Task WriteAsync(string value)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            IVsOutputWindowPane pane;
-
-            if (_output.GetPane(ref guid, out pane) == VSConstants.S_OK)
+            if (_output.GetPane(ref guid, out IVsOutputWindowPane pane) == VSConstants.S_OK)
             {
                 pane.OutputString(value);
             }
@@ -87,9 +83,7 @@ namespace SubSonic.Core.VisualStudio.Templating
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            IVsOutputWindowPane pane;
-
-            if (_output.GetPane(ref guid, out pane) == VSConstants.S_OK)
+            if (_output.GetPane(ref guid, out IVsOutputWindowPane pane) == VSConstants.S_OK)
             {
                 pane.OutputString(Environment.NewLine);
             }
@@ -99,9 +93,7 @@ namespace SubSonic.Core.VisualStudio.Templating
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            IVsOutputWindowPane pane;
-
-            if (_output.GetPane(ref guid, out pane) == VSConstants.S_OK)
+            if (_output.GetPane(ref guid, out IVsOutputWindowPane pane) == VSConstants.S_OK)
             {
                 pane.OutputString($"{value}{Environment.NewLine}");
             }

@@ -11,11 +11,16 @@ namespace ClientConsole
 {
     class Program
     {
+#pragma warning disable IDE0060 // Remove unused parameter
         static void Main(string[] args)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             using(var npClient = new NpClient<ITransformationRunFactoryService>(new NpEndPoint(TransformationRunFactory.TransformationRunFactoryService)))
             {
-                var runFactory = npClient.Proxy.TransformationRunFactory(Guid.NewGuid());
+                foreach(var uri in npClient.Proxy.GetAllChannelUri())
+                {
+                    Console.Out.WriteLine(uri.ToString());
+                }
             }
         }
     }

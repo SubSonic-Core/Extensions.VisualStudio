@@ -1,11 +1,10 @@
 ﻿using Mono.VisualStudio.TextTemplating;
 using SubSonic.Core.VisualStudio.Host;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SubSonic.Core.VisualStudio.HostProcess.Server
 {
+    [Serializable]
     public sealed class RemoteTransformationRunFactoryService
         : TransformationRunFactoryService
     {
@@ -14,7 +13,7 @@ namespace SubSonic.Core.VisualStudio.HostProcess.Server
 
         public override IProcessTransformationRunFactory TransformationRunFactory(Guid id)
         {
-            IProcessTransformationRunFactory factory = new RemoteTransformationRunFactory(id)
+            IProcessTransformationRunFactory factory = new RemoteTransformationRunFactory(id, new RemoteAssemblyLoadContext())
             {
                 IsAlive = true
             };

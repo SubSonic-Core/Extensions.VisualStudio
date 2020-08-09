@@ -43,7 +43,6 @@ namespace SubSonic.Core.VisualStudio.Services
         : IProcessTextTemplating
         , ITextTemplating
     {
-        private NpClient<ITransformationRunFactoryService> npClient;
         private int errorSessionDepth = 0;
         private IDictionary<string, int> currentErrors;
         private TextTemplatingSession transformationSession;
@@ -76,8 +75,6 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public async ThreadingTasks.Task<string> ProcessTemplateAsync(string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false)
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
             string result = null;
 
             if (this is ITextTemplatingComponents Component)
@@ -115,9 +112,11 @@ namespace SubSonic.Core.VisualStudio.Services
                         await LogErrorAsync(SubSonicCoreErrors.ErrorStartingRunFactoryProcess, new Location(TemplateFile));
                         if (debugging)
                         {
-                            ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
-                            args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
-                            args.Succeeded = false;
+                            ProcessTemplateEventArgs args = new ProcessTemplateEventArgs
+                            {
+                                TemplateOutput = SubSonicCoreErrors.DebugErrorOutput,
+                                Succeeded = false
+                            };
                             this.OnTransformProcessCompleted(args);
                         }
                         return SubSonicCoreErrors.DebugErrorOutput;
@@ -126,7 +125,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     if (!CancellationTokenSource.IsCancellationRequested)
                     {   // we have not been cancelled so let's continue
                         // we need to prepare the transformation and send the important parts over to the T4 Host Process
-                        if (Engine.PrepareTransformationRunner(content, Component.Host, runFactory) is IProcessTransformationRunner runner)
+                        if (Engine.PrepareTransformationRunner<RemoteTransformationRunner>(content, Component.Host, runFactory) is IProcessTransformationRunner runner)
                         {
                             if (!debugging)
                             {   // if we are not debugging we can wait for the process to finish
@@ -170,9 +169,11 @@ namespace SubSonic.Core.VisualStudio.Services
                                 else
                                 {
                                     await LogErrorAsync(SubSonicCoreErrors.ErrorAttachingToRunFactoryProcess, new Location(inputFilename));
-                                    ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
-                                    args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
-                                    args.Succeeded = false;
+                                    ProcessTemplateEventArgs args = new ProcessTemplateEventArgs
+                                    {
+                                        TemplateOutput = SubSonicCoreErrors.DebugErrorOutput,
+                                        Succeeded = false
+                                    };
                                     this.OnTransformProcessCompleted(args);
                                 }
                             }
@@ -366,11 +367,10 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            int num = 0;
             line = line > 0 ? --line : line;
             column = column > 0 ? --column : column;
 
-            if ((currentErrors == null) || !currentErrors.TryGetValue(message, out num))
+            if ((currentErrors == null) || !currentErrors.TryGetValue(message, out int num))
             {
                 if (currentErrors != null)
                 {
@@ -415,13 +415,9 @@ namespace SubSonic.Core.VisualStudio.Services
 
         private void Task_Navigate(object sender, EventArgs e)
         {
-            ErrorTask task = sender as ErrorTask;
-            if ((task != null) && (!string.IsNullOrEmpty(task.Document) && File.Exists(task.Document)))
+            if ((sender is ErrorTask task) && (!string.IsNullOrEmpty(task.Document) && File.Exists(task.Document)))
             {
-                IVsUIHierarchy hierarchy;
-                uint num;
-                IVsWindowFrame frame;
-                VsShellUtilities.OpenDocument(package, task.Document, Guid.Empty, out hierarchy, out num, out frame);
+                VsShellUtilities.OpenDocument(package, task.Document, Guid.Empty, out IVsUIHierarchy hierarchy, out _, out IVsWindowFrame frame);
                 if (frame != null)
                 {
                     task.HierarchyItem = hierarchy;
@@ -439,12 +435,15 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             try
             {
-                Hashtable properties = new Hashtable
+                if (!this.isChannelRegistered)
                 {
-                    [nameof(IChannel.ChannelName)] = TransformationRunFactory.TransformationRunFactoryService
-                };
+                    Hashtable properties = new Hashtable
+                    {
+                        [nameof(IChannel.ChannelName)] = TransformationRunFactory.TransformationRunFactoryService
+                    };
 
-                this.isChannelRegistered = ChannelServices.RegisterChannel(new NamedPipeChannel<ITransformationRunFactoryService>(properties, new BinarySerializationProvider()));
+                    this.isChannelRegistered = ChannelServices.RegisterChannel(new NamedPipeChannel<ITransformationRunFactoryService>(properties, new BinarySerializationProvider()));
+                }
             }
             catch(SubSonicRemotingException ex)
             {
@@ -521,15 +520,17 @@ namespace SubSonic.Core.VisualStudio.Services
             }
             catch (Exception exception)
             {
-                ThreadHelper.JoinableTaskFactory.Run(async () => await LogErrorAsync(exception.ToString(), new Location(filename)));
+               _ = LogErrorAsync(exception.ToString(), new Location(filename));
             }
             finally
             {
                 if (!success)
                 {
-                    ProcessTemplateEventArgs result = new ProcessTemplateEventArgs();
-                    result.TemplateOutput = processOutput;
-                    result.Succeeded = success;
+                    ProcessTemplateEventArgs result = new ProcessTemplateEventArgs
+                    {
+                        TemplateOutput = processOutput,
+                        Succeeded = success
+                    };
 
 #pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
                     uiDispatcher.BeginInvoke((Action) (() => {

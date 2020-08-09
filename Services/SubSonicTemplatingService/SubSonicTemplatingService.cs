@@ -72,8 +72,10 @@ namespace SubSonic.Core.VisualStudio.Services
             this.standardAssemblyReferences = new List<string>();
             this.standardImports = new List<string>();
             this.package = package ?? throw new ArgumentNullException(nameof(package));
-            this.errorListProvider = new ErrorListProvider(package);
-            this.errorListProvider.MaintainInitialTaskOrder = true;
+            this.errorListProvider = new ErrorListProvider(package)
+            {
+                MaintainInitialTaskOrder = true
+            };
             this.Engine = new TemplatingEngine();
 
             includePaths = new List<string>();
@@ -216,47 +218,43 @@ namespace SubSonic.Core.VisualStudio.Services
         }
 
         public bool LoadIncludeText(string requestFileName, out string content, out string location)
-        {
+        { 
+            bool success = false;
+
             content = "";
-            location = "";
+            location = ResolvePathAsync(requestFileName).Result;
 
-            string xlocation = null;
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            if (location == null || !File.Exists(location))
             {
-                xlocation = await ResolvePathAsync(requestFileName);
-
-                if (xlocation == null || !File.Exists(xlocation))
+                foreach (string path in includePaths)
                 {
-                    foreach(string path in includePaths)
-                    {
-                        string f = Path.Combine(path, requestFileName);
+                    string f = Path.Combine(path, requestFileName);
 
-                        if (File.Exists(f))
-                        {
-                            xlocation = f;
-                            break;
-                        }
+                    if (File.Exists(f))
+                    {
+                        location = f;
+                        break;
                     }
                 }
-            });
-
-            if (xlocation.IsNullOrEmpty())
-            {
-                return false;
             }
 
-            location = xlocation;
+            if (location.IsNullOrEmpty())
+            {
+                return success;
+            }
 
             try
             {
                 content = File.ReadAllText(location);
-                return true;
+
+                success = true;
             }
             catch(IOException ex)
             {
                 _ = LogErrorAsync($"Could not read included file '{location}':\n{ex}");
             }
-            return false;
+
+            return success;
         }
 
         public void LogErrors(CompilerErrorCollection errors)
@@ -318,10 +316,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
             if (!string.IsNullOrWhiteSpace(assemblyReference))
             {
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
-                {
-                    assemblyReference = await ExpandAllVariablesAsync(assemblyReference);
-                });
+                assemblyReference = ExpandAllVariablesAsync(assemblyReference).Result;
 
                 if (Path.IsPathRooted(assemblyReference))
                 {   // assembly reference is path rooted
@@ -501,12 +496,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public string ResolvePath(string path)
         {
-            string result = path;
-
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
-            {
-                result = await ResolvePathAsync(path);
-            });
+            string result = ResolvePathAsync(path).Result;
 
             return result;
         }
@@ -522,8 +512,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 }
             }
 
-            string directory = null;
-
+            string directory;
             if (TemplateFile.IsNullOrEmpty())
             {
                 directory = Environment.CurrentDirectory;
@@ -644,18 +633,15 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public object GetService(Type serviceType)
         {
-            object result = null;
+            object result;
 
             if (serviceType.IsAssignableFrom(GetType()))
             {
-                return this;
+                result = this;
             }
             else
             {
-                ThreadHelper.JoinableTaskFactory.Run(async delegate
-                {
-                    result = await AsyncServiceProvider.GetServiceAsync(serviceType);
-                });
+                result = AsyncServiceProvider.GetServiceAsync(serviceType).Result;
             }
 
             return result;

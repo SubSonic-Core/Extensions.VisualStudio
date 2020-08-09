@@ -267,7 +267,10 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Mono.TextTemplating">
-      <Version>2.2.0-preview-0096-g7b29bb1375</Version>
+      <Version>2.2.0-preview-0097-g53475be1dc</Version>
+    </PackageReference>
+    <PackageReference Include="ServiceWire">
+      <Version>5.3.5-preview-0010-gc7f9e6b6cd</Version>
     </PackageReference>
     <PackageReference Include="System.ComponentModel.Composition">
       <Version>4.7.0</Version>

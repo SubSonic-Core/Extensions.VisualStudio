@@ -9,10 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0096-g7b29bb1375" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\SubSonic.Core.VisualStudio.Common\SubSonic.Core.VisualStudio.Common.csproj" />
   </ItemGroup>
 
