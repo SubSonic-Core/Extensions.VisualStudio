@@ -4,7 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+#if !NETFRAMEWORK
 using System.Runtime.Loader;
+#endif
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,6 +16,7 @@ namespace SubSonic.Core.VisualStudio.Host
     public class RemoteTransformationRunFactory
         : TransformationRunFactory
     {
+#if !NETFRAMEWORK
         [NonSerialized]
         private readonly AssemblyLoadContext context;
 
@@ -36,5 +39,10 @@ namespace SubSonic.Core.VisualStudio.Host
             }
             return default;
         }
+#else
+        public RemoteTransformationRunFactory(Guid id)
+            : base(id) { }
+#endif
+        
     }
 }

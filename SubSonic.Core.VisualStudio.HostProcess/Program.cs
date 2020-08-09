@@ -1,4 +1,5 @@
-﻿using Mono.VisualStudio.TextTemplating.VSHost;
+﻿using Mono.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating.VSHost;
 using ServiceWire;
 using ServiceWire.NamedPipes;
 using SubSonic.Core.VisualStudio.Host;

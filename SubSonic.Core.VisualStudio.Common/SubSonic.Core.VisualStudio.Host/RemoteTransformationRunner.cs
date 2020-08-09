@@ -1,10 +1,9 @@
 ﻿using Mono.VisualStudio.TextTemplating.VSHost;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Reflection;
+#if !NET472
 using System.Runtime.Loader;
-using System.Text;
-using System.Threading.Tasks;
+#endif
 
 namespace SubSonic.Core.VisualStudio.Host
 {
@@ -12,6 +11,7 @@ namespace SubSonic.Core.VisualStudio.Host
     public class RemoteTransformationRunner
         : TransformationRunner
     {
+#if !NET472
         [NonSerialized]
         private readonly RemoteAssemblyLoadContext context;
 
@@ -19,22 +19,26 @@ namespace SubSonic.Core.VisualStudio.Host
             : base(factory, id)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
+
+            this.context.Resolving += ResolveReferencedAssemblies;
         }
 
-#if NETSTANDARD || NETCOREAPP || NET5
-        protected override AssemblyLoadContext GetLoadContext()
+        public override Assembly LoadFromAssemblyName(AssemblyName assemblyName)
         {
-            return context;
+            return context.LoadFromAssemblyName(assemblyName);
         }
 
-        protected override void Unload(AssemblyLoadContext context)
+        protected override void Unload()
         {
-#if !NETSTANDARD
-            context.Unload();
-#else
+            this.context.Resolving -= ResolveReferencedAssemblies;
+
+#if NETCOREAPP
             this.context.Unload();
 #endif
         }
+#else
+        public RemoteTransformationRunner(TransformationRunFactory factory, Guid id)
+                : base(factory, id) { }
 #endif
-        }
+    }
 }

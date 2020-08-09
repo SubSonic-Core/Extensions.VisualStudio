@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿#if !NETFRAMEWORK
+using System;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SubSonic.Core.VisualStudio.Host
 {
@@ -29,3 +26,4 @@ namespace SubSonic.Core.VisualStudio.Host
 #endif
     }
 }
+#endif

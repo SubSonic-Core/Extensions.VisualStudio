@@ -34,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Mono.TextTemplating, Version=2.2.0.0, Culture=neutral, PublicKeyToken=4fa72d50da25cb30, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Mono.TextTemplating.2.2.0-preview-0097-g53475be1dc\lib\net45\Mono.TextTemplating.dll</HintPath>
+      <HintPath>..\..\packages\Mono.TextTemplating.2.2.0-preview-0104-g9c171000b2\lib\net45\Mono.TextTemplating.dll</HintPath>
     </Reference>
     <Reference Include="ServiceWire, Version=5.3.0.0, Culture=neutral, PublicKeyToken=04ff4e57e61e2a6f, processorArchitecture=MSIL">
       <HintPath>..\..\packages\ServiceWire.5.3.5-preview-0010-gc7f9e6b6cd\lib\net462\ServiceWire.dll</HintPath>
