@@ -12,28 +12,22 @@ namespace SubSonic.Core.VisualStudio.Host
         : TransformationRunner
     {
 #if !NET472
-        [NonSerialized]
-        private readonly RemoteAssemblyLoadContext context;
-
-        public RemoteTransformationRunner(TransformationRunFactory factory, Guid id, RemoteAssemblyLoadContext context) 
+        public RemoteTransformationRunner(TransformationRunFactory factory, Guid id)
             : base(factory, id)
         {
-            this.context = context ?? throw new ArgumentNullException(nameof(context));
-
-            this.context.Resolving += ResolveReferencedAssemblies;
+            RemoteTransformationRunFactory.Context.Resolving += ResolveReferencedAssemblies;
         }
 
         public override Assembly LoadFromAssemblyName(AssemblyName assemblyName)
         {
-            return context.LoadFromAssemblyName(assemblyName);
+            return RemoteTransformationRunFactory.Context.LoadFromAssemblyName(assemblyName);
         }
 
         protected override void Unload()
         {
-            this.context.Resolving -= ResolveReferencedAssemblies;
-
+            RemoteTransformationRunFactory.Context.Resolving -= ResolveReferencedAssemblies;
 #if NETCOREAPP
-            this.context.Unload();
+            RemoteTransformationRunFactory.Context.Unload();
 #endif
         }
 #else

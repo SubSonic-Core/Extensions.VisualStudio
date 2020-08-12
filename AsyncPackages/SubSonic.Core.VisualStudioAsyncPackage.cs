@@ -68,6 +68,7 @@ namespace SubSonic.Core.VisualStudio
         private bool isTemplateInProcess;
         private ProjectItem templateProjectItem;
         private string processResults;
+        internal CancellationTokenSource CancellationTokenSource;
 
         /// <summary>
         /// SubSonic.Core.VisualStudioPackage GUID string.
@@ -78,6 +79,7 @@ namespace SubSonic.Core.VisualStudio
         {
             singletonInstance = this;
             callback = new TextTemplatingCallback();
+            CancellationTokenSource = new CancellationTokenSource();
         }
 
         #region Package Members
@@ -268,7 +270,7 @@ namespace SubSonic.Core.VisualStudio
             if (subSonicTemplatingService != null)
             {
                 subSonicTemplatingService.LastInvocationRaisedErrors = false;
-                subSonicTemplatingService.CancellationTokenSource = new CancellationTokenSource();
+                CancellationTokenSource = new CancellationTokenSource();
             }
         }
 

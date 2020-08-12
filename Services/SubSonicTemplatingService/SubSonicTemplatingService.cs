@@ -1,8 +1,8 @@
 ﻿using EnvDTE;
 using Microsoft.VisualStudio.Data.Services;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
+using Microsoft.Win32;
 using Mono.TextTemplating;
 using Mono.TextTemplating.CodeCompilation;
 using Mono.VisualStudio.TextTemplating;
@@ -18,75 +18,112 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Security;
 using System.Security.Policy;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using VSLangProj;
 using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
 using ThreadingTasks = System.Threading.Tasks;
+using VsShell = Microsoft.VisualStudio.Shell;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
     public sealed partial class SubSonicTemplatingService
         : MarshalByRefObject
         , SSubSonicTemplatingService
-        , ITextTemplatingService
+        , ITextTemplatingComponents
+        , IProcessTextTemplating
         , IServiceProvider
         , IDisposable
     {
-        private static readonly Dictionary<string, string> KnownAssemblyNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "System", Path.GetFileName(typeof(System.Uri).Assembly.Location) },
-            { "System.Core", Path.GetFileName(typeof(System.Linq.Enumerable).Assembly.Location) },
-            { "System.Data", Path.GetFileName(typeof(System.Data.DataTable).Assembly.Location) },
-            { "System.Linq", Path.GetFileName(typeof(System.Linq.Enumerable).Assembly.Location) },
-            { "System.Xml", Path.GetFileName(typeof(System.Xml.XmlAttribute).Assembly.Location) }
-        };
-
+        private static SubSonicTemplatingService singleton;
         private readonly SubSonicCoreVisualStudioAsyncPackage package;
-        private readonly ErrorListProvider errorListProvider;
-        private readonly List<string> standardAssemblyReferences;
-        private readonly List<string> standardImports;
-        private readonly SubSonicOutputWriter subSonicOutput;
+        private readonly VsShell.ErrorListProvider errorListProvider;
+        internal readonly SubSonicOutputWriter subSonicOutput;
         private AppDomain transformDomain;
         private System.Diagnostics.Process transformProcess;
         private readonly Regex foundAssembly = new Regex(@"[A-Z|a-z]:\\", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 
-        internal CancellationTokenSource CancellationTokenSource;
-
-        private readonly IList<string> includePaths;
-        private readonly IDictionary<RuntimeKind, IList<string>> referencePaths;
-        readonly Dictionary<ParameterKey, string> parameters;
-        private readonly Dictionary<string, KeyValuePair<string, string>> directiveProcessors;
-
         public SubSonicTemplatingService(SubSonicCoreVisualStudioAsyncPackage package)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
             Trace.WriteLine($"Constructing a new instance of {nameof(SubSonicTemplatingService)}.");
-            this.standardAssemblyReferences = new List<string>();
-            this.standardImports = new List<string>();
+
+            VsShell.ThreadHelper.ThrowIfNotOnUIThread();
+
             this.package = package ?? throw new ArgumentNullException(nameof(package));
-            this.errorListProvider = new ErrorListProvider(package)
+            this.errorListProvider = new VsShell.ErrorListProvider(package)
             {
                 MaintainInitialTaskOrder = true
             };
-            this.Engine = new TemplatingEngine();
+            this.subSonicOutput = new SubSonicOutputWriter(package);
 
-            includePaths = new List<string>();
-            referencePaths = new Dictionary<RuntimeKind, IList<string>>();
-            parameters = new Dictionary<ParameterKey, string>();
-            directiveProcessors = new Dictionary<string, KeyValuePair<string, string>>();
-            subSonicOutput = new SubSonicOutputWriter(this);
-            CancellationTokenSource = new CancellationTokenSource();
+            this.Engine = new TemplatingEngine();
+            this.transformationHost = new RemoteTransformationHost();
+
+            this.transformationHost.GetHostOptionEventHandler += TransformationHost_GetHostOptionEventHandler;
+            this.transformationHost.ResolveAssemblyReferenceEventHandler += TransformationHost_ResolveAssemblyReferenceEventHandler;
+            this.transformationHost.ExpandAllVariablesEventHandler += TransformationHost_ExpandAllVariablesEventHandler;
+
+            singleton = this;
 
             package.DTE.Events.SolutionEvents.AfterClosing += SolutionEvents_AfterClosing;
         }
+
+        private string TransformationHost_ExpandAllVariablesEventHandler(object sender, Host.ExpandAllVariablesEventArgs args)
+        {
+            return VsShell.ThreadHelper.JoinableTaskFactory.Run(async () =>
+               await ExpandAllVariablesAsync(args.FilePath)
+           );
+        }
+
+        private string TransformationHost_ResolveAssemblyReferenceEventHandler(object sender, Host.ResolveAssemblyReferenceEventArgs args)
+        {
+            return VsShell.ThreadHelper.JoinableTaskFactory.Run(async () =>
+                await ResolveAssemblyReferenceAsync(args.AssemblyReference)
+            );
+        }
+
+        private static SubSonicCoreVisualStudioAsyncPackage Package()
+        {
+            return SubSonicCoreVisualStudioAsyncPackage.Singleton;
+        }
+
+        private object TransformationHost_GetHostOptionEventHandler(object sender, Host.GetHostOptionEventArgs args)
+        {
+            if (Package() != null)
+            {
+                if (args.OptionName.Equals(nameof(TemplateSettings.CachedTemplates), StringComparison.OrdinalIgnoreCase))
+                {
+                    return Package().HostOptions.CachedTemplates;
+                }
+                else if (args.OptionName.Equals(nameof(TemplateSettings.CompilerOptions), StringComparison.OrdinalIgnoreCase))
+                {
+                    return Package().HostOptions.CompilerOptions;
+                }
+                else if (args.OptionName.Equals(nameof(TemplateSettings.NoLinePragmas), StringComparison.OrdinalIgnoreCase))
+                {
+                    return Package().HostOptions.LinePragmas;
+                }
+                else if (args.OptionName.Equals(nameof(TemplateSettings.UseRelativeLinePragmas), StringComparison.OrdinalIgnoreCase))
+                {
+                    return Package().HostOptions.UseRelativeLinePragmas;
+                }
+                else if (args.OptionName.Equals(nameof(TemplateSettings.Log), StringComparison.OrdinalIgnoreCase))
+                {   // supply the engine with a textwriter that can output to the output pane.
+                    return subSonicOutput.GetOutputTextWriter();
+                }
+                else if (args.OptionName.Equals(nameof(TemplateSettings.RuntimeKind), StringComparison.OrdinalIgnoreCase))
+                {
+                    return Package().HostOptions.RuntimeKind;
+                }
+            }
+
+            return null;
+        }
+
+        public static SubSonicTemplatingService Singleton => singleton;
 
         private void SolutionEvents_AfterClosing()
         {
@@ -98,14 +135,11 @@ namespace SubSonic.Core.VisualStudio.Services
         public async Task<object> InitializeAsync(CancellationToken cancellationToken)
         {
             await TaskScheduler.Default;
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            await VsShell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
             await subSonicOutput.InitializeAsync("SubSonic Core", cancellationToken);
 
-            foreach (RuntimeInfo info in RuntimeInfo.GetAllValidRuntimes())
-            {
-                AddReferencePath(info.Kind, info.RuntimeDirectory);
-            }
+            await transformationHost.InitializeAsync();
 
             if (GetService(typeof(DTE)) is DTE dte)
             {
@@ -124,7 +158,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 {
                     SubSonicConnectionManager manager = new SubSonicConnectionManager();
 
-                    foreach(var key in connectionManager.Connections.Keys)
+                    foreach (var key in connectionManager.Connections.Keys)
                     {
                         manager.Add(key, new SubSonicDataConnection(connectionManager.Connections[key].Connection));
                     }
@@ -140,183 +174,16 @@ namespace SubSonic.Core.VisualStudio.Services
         private bool disposedValue;
 
         #region ITextTemplatingEngineHost
-        public IList<string> StandardAssemblyReferences
+
+        public async Task<string> ResolveAssemblyReferenceAsync(string assemblyReference)
         {
-            get
-            {
-                ThreadHelper.ThrowIfNotOnUIThread();
-
-                if (!standardAssemblyReferences.Any())
-                {
-                    standardAssemblyReferences.AddRange(new[]
-                    {
-                        ResolveAssemblyReference("System"),
-                        ResolveAssemblyReference("System.Core"),
-                        typeof(TemplatingEngine).Assembly.Location, // templating dll contains Mono.VisualStudio.TextTemplating
-                        typeof(DependencyObject).Assembly.Location,
-                        typeof(IDataConnection).Assembly.Location,
-                        base.GetType().Assembly.Location
-                    }.Distinct());
-                }
-                return standardAssemblyReferences;
-            }
-        }
-
-        public IList<string> StandardImports
-        {
-            get
-            {
-                if (!standardImports.Any())
-                {
-                    standardImports.AddRange(new[]
-                    {
-                        "System",
-                        typeof(IDataConnection).Namespace,
-                        "Mono.VisualStudio.TextTemplating"
-                    }.Distinct());
-                }
-                return standardImports;
-            }
-        }
-
-        public string TemplateFile { get; set; }
-
-        public object GetHostOption(string optionName)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            if (optionName.Equals(nameof(TemplateSettings.CachedTemplates), StringComparison.OrdinalIgnoreCase))
-            {
-                return package.HostOptions.CachedTemplates;
-            }
-            else if (optionName.Equals(nameof(TemplateSettings.CompilerOptions), StringComparison.OrdinalIgnoreCase))
-            {
-                return package.HostOptions.CompilerOptions;
-            }
-            else if (optionName.Equals(nameof(TemplateSettings.NoLinePragmas), StringComparison.OrdinalIgnoreCase))
-            {
-                return package.HostOptions.LinePragmas;
-            }
-            else if (optionName.Equals(nameof(TemplateSettings.UseRelativeLinePragmas), StringComparison.OrdinalIgnoreCase))
-            {
-                return package.HostOptions.UseRelativeLinePragmas;
-            }
-            else if (optionName.Equals(nameof(TemplateSettings.Log), StringComparison.OrdinalIgnoreCase))
-            {   // supply the engine with a textwriter that can output to the output pane.
-                return subSonicOutput.GetOutputTextWriter();
-            }
-            else if (optionName.Equals(nameof(TemplateSettings.CancellationToken), StringComparison.OrdinalIgnoreCase))
-            {
-                return CancellationTokenSource.Token;
-            }
-            else if (optionName.Equals(nameof(TemplateSettings.RuntimeKind), StringComparison.OrdinalIgnoreCase))
-            {
-                return package.HostOptions.RuntimeKind;
-            }
-
-            return null;
-        }
-
-        public bool LoadIncludeText(string requestFileName, out string content, out string location)
-        { 
-            bool success = false;
-
-            content = "";
-            location = ResolvePathAsync(requestFileName).Result;
-
-            if (location == null || !File.Exists(location))
-            {
-                foreach (string path in includePaths)
-                {
-                    string f = Path.Combine(path, requestFileName);
-
-                    if (File.Exists(f))
-                    {
-                        location = f;
-                        break;
-                    }
-                }
-            }
-
-            if (location.IsNullOrEmpty())
-            {
-                return success;
-            }
-
-            try
-            {
-                content = File.ReadAllText(location);
-
-                success = true;
-            }
-            catch(IOException ex)
-            {
-                _ = LogErrorAsync($"Could not read included file '{location}':\n{ex}");
-            }
-
-            return success;
-        }
-
-        public void LogErrors(CompilerErrorCollection errors)
-        {
-            _ = LogErrorsAsync(errors);
-        }
-
-        public async ThreadingTasks.Task LogErrorsAsync(CompilerErrorCollection errors)
-        {
-            foreach(CompilerError error in errors)
-            {
-               await LogErrorAsync(error.ErrorText, new Location(error.FileName, error.Line, error.Column), error.IsWarning);
-            }
-        }
-
-        // app domain is not trully supported going forward
-        public AppDomain ProvideTemplatingAppDomain(string content)
-        {
-            return null;
-        }
-        /// <summary>
-        /// add a reference path for a particular runtime
-        /// </summary>
-        /// <param name="runtime"></param>
-        /// <param name="directoryPath"></param>
-        public void  AddReferencePath(RuntimeKind runtime, string directoryPath)
-        {
-            if (!referencePaths.ContainsKey(runtime))
-            {
-                referencePaths[runtime] = new List<string>();
-            }
-
-            if (!referencePaths[runtime].Any(x => x.Equals(directoryPath, StringComparison.OrdinalIgnoreCase)))
-            {
-                referencePaths[runtime].Add(directoryPath);
-            }
-        }
-
-        public IList<string> ReferencePaths
-        {
-            get
-            {
-                RuntimeKind runtime = package.HostOptions.RuntimeKind;
-
-                if (referencePaths.ContainsKey(runtime))
-                {
-                    return referencePaths[runtime];
-                }
-
-                return new List<string>();
-            }
-        }
-
-        public string ResolveAssemblyReference(string assemblyReference)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            await VsShell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(Package().CancellationTokenSource.Token);
 
             string path = assemblyReference;
 
             if (!string.IsNullOrWhiteSpace(assemblyReference))
             {
-                assemblyReference = ExpandAllVariablesAsync(assemblyReference).Result;
+                assemblyReference = await SubSonicTemplatingService.Singleton.ExpandAllVariablesAsync(path);
 
                 if (Path.IsPathRooted(assemblyReference))
                 {   // assembly reference is path rooted
@@ -338,25 +205,6 @@ namespace SubSonic.Core.VisualStudio.Services
                     path = GlobalAssemblyCacheHelper.GetLocation(assemblyReference);
                 }
 
-                // let's check our list of configured ReferencePaths
-                if (!foundAssembly.IsMatch(path))
-                {
-                    KnownAssemblyNames.TryGetValue(assemblyReference, out string fileName);
-
-                    foreach (string referencePath in ReferencePaths)
-                    {
-                        string xpath = Path.Combine(referencePath, fileName ?? assemblyReference);
-                        if (File.Exists(xpath))
-                        {
-                            path = xpath;
-                        }
-                        else if (File.Exists($"{xpath}.dll"))
-                        {
-                            path = $"{xpath}.dll";
-                        }
-                    }
-                }
-
                 // still have not found anything let's check the public assemblies folder
                 if (!foundAssembly.IsMatch(path))
                 {
@@ -366,7 +214,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
                     if (SubSonicCoreVisualStudioAsyncPackage.Singleton != null)
                     {
-                        string vSinstallDir = GetVSInstallDir(SubSonicCoreVisualStudioAsyncPackage.Singleton.ApplicationRegistryRoot);
+                        string vSinstallDir = GetVSInstallDir(Package().ApplicationRegistryRoot);
                         if (!string.IsNullOrEmpty(vSinstallDir))
                         {
                             string code_base = Path.Combine(Path.Combine(vSinstallDir, "PublicAssemblies"), assemblyReference);
@@ -393,7 +241,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     // not sure if this willl be a problem, I worry about reference only assemblies.
                     // maybe ensure that the reference is from the nuget package and is a real boy.
                     // second check the project references
-                    if (GetService(typeof(DTE)) is DTE dTE)
+                    if (Package()?.GetService<DTE>() is DTE dTE)
                     {
                         foreach (Project project in dTE.Solution.Projects)
                         {
@@ -411,20 +259,6 @@ namespace SubSonic.Core.VisualStudio.Services
             }
 
             return path;
-        }
-
-        private async Task<string> ExpandAllVariablesAsync(string input)
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            if (!string.IsNullOrWhiteSpace(input))
-            {
-                input = Environment.ExpandEnvironmentVariables(input);
-                input = await Utilities.PathHelper.ExpandVsMacroVariablesAsync(input, VsHierarchy);
-                input = await Utilities.PathHelper.ExpandProjectPropertiesAsync(input, VsHierarchy, this);
-            }
-
-            return input;
         }
 
         private string ResolveAssemblyReferenceByProject(string assemblyReference, References references, Match assembly)
@@ -462,109 +296,45 @@ namespace SubSonic.Core.VisualStudio.Services
             return assemblyReference;
         }
 
-        public Type ResolveDirectiveProcessor(string processorName)
+        private string GetVSInstallDir(RegistryKey applicationRoot)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            if (!directiveProcessors.TryGetValue(processorName, out KeyValuePair<string, string> value))
+            string str = string.Empty;
+            if (applicationRoot != null)
             {
-                throw new Exception(string.Format("No directive processor registered as '{0}'", processorName));
+                str = applicationRoot.GetValue("InstallDir") as string;
             }
-
-            var asmPath = ResolveAssemblyReference(value.Value);
-            if (asmPath.IsNullOrEmpty())
-            {
-                throw new Exception(string.Format("Could not resolve assembly '{0}' for directive processor '{1}'", value.Value, processorName));
-            }
-            var asm = Assembly.LoadFrom(asmPath);
-            return asm.GetType(value.Key, true);
+            return ((str != null) ? str.Replace(@"\\", @"\") : string.Empty);
         }
 
-        public string ResolveParameterValue(string directiveId, string processorName, string parameterName)
+        public void LogErrors(CompilerErrorCollection errors)
         {
-            var key = new ParameterKey(processorName, directiveId, parameterName);
-            if (parameters.TryGetValue(key, out var value))
-            {
-                return value;
-            }
-            if (processorName != null || directiveId != null)
-            {
-                return ResolveParameterValue(null, null, parameterName);
-            }
-            return null;
+            _ = LogErrorsAsync(errors);
         }
 
-        public string ResolvePath(string path)
+        public async ThreadingTasks.Task LogErrorsAsync(CompilerErrorCollection errors)
         {
-            string result = ResolvePathAsync(path).Result;
-
-            return result;
-        }
-
-        private async Task<string> ResolvePathAsync(string path)
-        {
-            if (path.IsNotNullOrEmpty())
+            foreach (CompilerError error in errors)
             {
-                path = await ExpandAllVariablesAsync(path);
-                if (Path.IsPathRooted(path))
-                {
-                    return path;
-                }
-            }
-
-            string directory;
-            if (TemplateFile.IsNullOrEmpty())
-            {
-                directory = Environment.CurrentDirectory;
-            }
-            else
-            {
-                directory = Path.GetDirectoryName(Path.GetFullPath(TemplateFile));
-            }
-
-            if (path.IsNullOrEmpty())
-            {
-                return directory;
-            }
-
-            string test = Path.Combine(directory, path);
-            if (File.Exists(test) || Directory.Exists(test))
-            {
-                return test;
-            }
-
-            return path;
-        }
-
-        public void SetFileExtension(string extension)
-        {
-            if (Callback != null)
-            {
-                Callback.SetFileExtension(extension);
-            }
-
-            extension = extension.Trim('.');
-
-            ThreadHelper.ThrowIfNotOnUIThread();
-            
-            if (extension.Equals("cs", StringComparison.OrdinalIgnoreCase))
-            {
-                SqmFacade.T4SetFileExtensionCS();
-            }
-            else if (extension.Equals("vb", StringComparison.OrdinalIgnoreCase))
-            {
-                SqmFacade.T4SetFileExtensionVB();
-            }
-            else
-            {
-                SqmFacade.T4SetFileExtensionOther();
+                await LogErrorAsync(error.ErrorText, new Location(error.FileName, error.Line, error.Column), error.IsWarning);
             }
         }
+        
 
-        public void SetOutputEncoding(Encoding encoding, bool fromOutputDirective)
+        public async Task<string> ExpandAllVariablesAsync(string input)
         {
-            Callback.SetOutputEncoding(encoding, fromOutputDirective);
+            await VsShell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            if (!string.IsNullOrWhiteSpace(input))
+            {
+                input = Environment.ExpandEnvironmentVariables(input);
+                input = await Utilities.PathHelper.ExpandVsMacroVariablesAsync(input, VsHierarchy);
+                input = await Utilities.PathHelper.ExpandProjectPropertiesAsync(input, VsHierarchy, this);
+            }
+
+            return input;
         }
+
+        
 
         internal void UnloadGenerationAppDomain()
         {
@@ -574,7 +344,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 {
                     AppDomain.Unload(transformDomain);
                 }
-                catch(AppDomainUnloadedException)
+                catch (AppDomainUnloadedException)
                 {
                 }
                 finally
@@ -610,11 +380,15 @@ namespace SubSonic.Core.VisualStudio.Services
         #endregion
 
         #region ITextTemplatingComponents
-        public ITextTemplatingEngineHost Host => this;
+        private readonly RemoteTransformationHost transformationHost;
+
+        public ITextTemplatingEngineHost Host => transformationHost;
 
         public IProcessTextTemplatingEngine Engine { get; }
 
         private TemplatingEngine MonoEngine => Engine as TemplatingEngine;
+
+        public string TemplateFile { get => transformationHost.TemplateFile; set => transformationHost.TemplateFile = value; }
 
         ITextTemplatingEngine ITextTemplatingComponents.Engine => Engine;
         public ITextTemplatingCallback Callback { get; set; }
@@ -624,7 +398,7 @@ namespace SubSonic.Core.VisualStudio.Services
         {
             get
             {
-                ThreadHelper.ThrowIfNotOnUIThread();
+                VsShell.ThreadHelper.ThrowIfNotOnUIThread();
 
                 return Hierarchy as IVsHierarchy;
             }
@@ -639,9 +413,20 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 result = this;
             }
+            else if (serviceType is ITextTemplatingEngineHost ||
+                     serviceType is ITextTemplatingSessionHost)
+            {
+                return transformationHost;
+            }
+            else if (serviceType is ITextTemplatingSession)
+            {
+                return transformationHost.Session;
+            }
             else
             {
-                result = AsyncServiceProvider.GetServiceAsync(serviceType).Result;
+#pragma warning disable VSTHRD104 // Offer async methods
+                result = VsShell.ThreadHelper.JoinableTaskFactory.Run(async () => await AsyncServiceProvider.GetServiceAsync(serviceType));
+#pragma warning restore VSTHRD104 // Offer async methods
             }
 
             return result;
@@ -649,13 +434,15 @@ namespace SubSonic.Core.VisualStudio.Services
 
         private void Dispose(bool disposing)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            VsShell.ThreadHelper.ThrowIfNotOnUIThread();
 
             if (!disposedValue)
             {
                 if (disposing)
                 {
-                    CancellationTokenSource.Cancel(true);
+                    transformationHost.ResolveAssemblyReferenceEventHandler -= TransformationHost_ResolveAssemblyReferenceEventHandler;
+                    transformationHost.GetHostOptionEventHandler -= TransformationHost_GetHostOptionEventHandler;
+                    transformationHost.ExpandAllVariablesEventHandler -= TransformationHost_ExpandAllVariablesEventHandler;
                     package.DTE.Events.SolutionEvents.AfterClosing -= SolutionEvents_AfterClosing;
                     errorListProvider.Dispose();
                     subSonicOutput.Dispose();
@@ -677,7 +464,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public void Dispose()
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            VsShell.ThreadHelper.ThrowIfNotOnUIThread();
 
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);

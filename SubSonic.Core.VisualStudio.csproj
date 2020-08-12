@@ -80,8 +80,6 @@
     </Compile>
     <Compile Include="Services\SubSonicTemplatingService\SubSonicTemplatingService.cs" />
     <Compile Include="Services\SubSonicTemplatingService\TextTemplating.cs" />
-    <Compile Include="Services\SubSonicTemplatingService\TextTemplatingServiceStructures.cs" />
-    <Compile Include="Services\SubSonicTemplatingService\TextTemplatingSessionHost.cs" />
     <Compile Include="AsyncPackages\SubSonic.Core.VisualStudioAsyncPackage.cs" />
     <Compile Include="SubSonicCoreErrors.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -265,9 +263,6 @@
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="16.7.3069">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="ServiceWire">
-      <Version>5.3.5-preview-0010-gc7f9e6b6cd</Version>
     </PackageReference>
     <PackageReference Include="System.ComponentModel.Composition">
       <Version>4.7.0</Version>

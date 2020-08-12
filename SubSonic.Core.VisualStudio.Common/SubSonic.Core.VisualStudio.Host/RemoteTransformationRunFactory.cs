@@ -14,35 +14,30 @@ namespace SubSonic.Core.VisualStudio.Host
 {
     [Serializable]
     public class RemoteTransformationRunFactory
-        : TransformationRunFactory
+         : TransformationRunFactory
     {
-#if !NETFRAMEWORK
-        [NonSerialized]
-        private readonly AssemblyLoadContext context;
-
-        public RemoteTransformationRunFactory(Guid id, AssemblyLoadContext context)
-            : base(id)
-        {
-            this.context = context ?? throw new ArgumentNullException(nameof(context));
-        }
-
-        public override IProcessTransformationRunner CreateTransformationRunner(Type runnerType)
-        {
-            var runnerId = Guid.NewGuid();
-
-            if (Activator.CreateInstance(runnerType, new object[] { this, runnerId, context }) is IProcessTransformationRunner runner)
-            {
-                if (Runners.TryAdd(runnerId, runner))
-                {
-                    return runner;
-                }
-            }
-            return default;
-        }
-#else
+#if NETSTANDARD || NETCOREAPP
+        public static RemoteAssemblyLoadContext Context { get; } = new RemoteAssemblyLoadContext();
+#endif
         public RemoteTransformationRunFactory(Guid id)
             : base(id) { }
+
+        public override IProcessTransformationRunner CreateTransformationRunner()
+        {
+            Guid runnerId = Guid.NewGuid();
+
+#if NETSTANDARD || NETCOREAPP
+            IProcessTransformationRunner runner = new RemoteTransformationRunner(this, runnerId);
+#else
+            IProcessTransformationRunner runner = new RemoteTransformationRunner(this, runnerId);
 #endif
-        
+
+            if (Runners.TryAdd(runnerId, runner))
+            {
+                return runner;
+            }
+
+            return default;
+        }
     }
 }

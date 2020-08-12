@@ -2,13 +2,10 @@
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
-using Microsoft.Win32;
 using Mono.TextTemplating;
 using Mono.TextTemplating.CodeCompilation;
 using Mono.VisualStudio.TextTemplating;
 using Mono.VisualStudio.TextTemplating.VSHost;
-using ServiceWire;
-using ServiceWire.NamedPipes;
 using SubSonic.Core.Remoting;
 using SubSonic.Core.Remoting.Channels;
 using SubSonic.Core.Remoting.Channels.Ipc.NamedPipes;
@@ -19,13 +16,11 @@ using SubSonic.Core.VisualStudio.Common;
 using SubSonic.Core.VisualStudio.Host;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
-using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Runtime.Remoting;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -36,7 +31,6 @@ using ThreadingTasks = System.Threading.Tasks;
 namespace SubSonic.Core.VisualStudio.Services
 {
     using RemotingServices = Remoting.RemotingServices;
-    using Utilities = SubSonic.Core.Utilities;
 
     [Serializable]
     public partial class SubSonicTemplatingService
@@ -45,7 +39,6 @@ namespace SubSonic.Core.VisualStudio.Services
     {
         private int errorSessionDepth = 0;
         private IDictionary<string, int> currentErrors;
-        private TextTemplatingSession transformationSession;
         private IProcessTransformationRunFactory runFactory;
         private bool transformationSessionImplicitlyCreated;
         private bool isChannelRegistered;
@@ -75,8 +68,6 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public async ThreadingTasks.Task<string> ProcessTemplateAsync(string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false)
         {
-            string result = null;
-
             if (this is ITextTemplatingComponents Component)
             {
                 Component.Hierarchy = hierarchy;
@@ -99,7 +90,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
                     try
                     {
-                        runFactory = await GetTransformationRunFactoryAsync(splitOutput, splitError, CancellationTokenSource.Token);
+                        runFactory = await GetTransformationRunFactoryAsync(splitOutput, splitError, SubSonicCoreVisualStudioAsyncPackage.Singleton.CancellationTokenSource.Token);
                     }
                     catch (Exception ex)
                     {
@@ -122,20 +113,25 @@ namespace SubSonic.Core.VisualStudio.Services
                         return SubSonicCoreErrors.DebugErrorOutput;
                     }
 
-                    if (!CancellationTokenSource.IsCancellationRequested)
+                    if (!SubSonicCoreVisualStudioAsyncPackage.Singleton.CancellationTokenSource.IsCancellationRequested)
                     {   // we have not been cancelled so let's continue
                         // we need to prepare the transformation and send the important parts over to the T4 Host Process
-                        if (Engine.PrepareTransformationRunner<RemoteTransformationRunner>(content, Component.Host, runFactory) is IProcessTransformationRunner runner)
+                        if (Engine.PrepareTransformationRunner(content, Component.Host, runFactory) is IProcessTransformationRunner runner)
                         {
                             if (!debugging)
                             {   // if we are not debugging we can wait for the process to finish
                                 // and we do not need to attach to the host process.
 
-                                result = runner.PerformTransformation();
-
-                                if (runner.Errors.HasErrors)
+                                if (runFactory.StartTransformation(runner.RunnerId) is TextTemplatingCallback result)
                                 {
-                                    await LogErrorsAsync(runner.Errors);
+                                    if (result.Errors.HasErrors)
+                                    {
+                                        await transformationHost.LogErrorsAsync(result.Errors);
+                                    }
+
+                                    Component.Callback.SetFileExtension(result.Extension);
+
+                                    return result.TemplateOutput;
                                 }
                             }
                             else
@@ -187,13 +183,13 @@ namespace SubSonic.Core.VisualStudio.Services
                                 args.Succeeded = false;
                                 this.OnTransformProcessCompleted(args);
                             }
-                            return SubSonicCoreErrors.DebugErrorOutput;
+
+                            await LogErrorsAsync(transformationHost.Errors.ToCompilerErrorCollection());
                         }
                     }
                 }
             }
-
-            return result;
+            return SubSonicCoreErrors.DebugErrorOutput;
         }
 
         
@@ -211,7 +207,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
                 SubSonicComponents.Host.SetFileExtension(SearchForLanguage(content, "C#") ? ".cs" : ".vb");
 
-                Session = CreateSession();
+                transformationHost.Session = transformationHost.CreateSession();
 
                 result = SubSonicComponents.Engine.ProcessTemplate(content, SubSonicComponents.Host);
 
@@ -303,11 +299,11 @@ namespace SubSonic.Core.VisualStudio.Services
                     currentErrors.Clear();
                 }
                 LastInvocationRaisedErrors = false;
-                CancellationTokenSource = new CancellationTokenSource();
+                SubSonicCoreVisualStudioAsyncPackage.Singleton.CancellationTokenSource = new CancellationTokenSource();
                 errorListProvider.Tasks.Clear();
-                if ((transformationSession == null) && !transformationSessionImplicitlyCreated)
+                if ((transformationHost.Session == null) && !transformationSessionImplicitlyCreated)
                 {
-                    transformationSession = new TextTemplatingSession();
+                    transformationHost.Session = transformationHost.CreateSession();
                     transformationSessionImplicitlyCreated = true;
                 }
             }
@@ -325,7 +321,7 @@ namespace SubSonic.Core.VisualStudio.Services
             }
             if (errorSessionDepth == 0 && transformationSessionImplicitlyCreated)
             {
-                transformationSession = null;
+                transformationHost.Session = null;
                 transformationSessionImplicitlyCreated = false;
             }
 
@@ -498,7 +494,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     return default;
                 }
 
-                runFactory = await RemotingServices.ConnectAsync<IProcessTransformationRunFactory>(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}/{TransformationRunFactory.TransformationRunFactoryMethod}/{Guid.NewGuid()}"));
+                runFactory = await RemotingServices.ConnectAsync<IProcessTransformationRunFactory>(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}/{TransformationRunFactory.TransformationRunFactoryMethod}"));
             }
 
             return runFactory;
@@ -510,9 +506,12 @@ namespace SubSonic.Core.VisualStudio.Services
             string processOutput = SubSonicCoreErrors.DebugErrorOutput;
             try
             {
-                processOutput = this.runFactory.PerformTransformation(runner.RunnerId);
-                success = !runner.Errors.HasErrors;
-                this.LogErrors(runner.Errors);
+                if (this.runFactory.StartTransformation(runner.RunnerId) is TextTemplatingCallback callback)
+                {
+                    processOutput = callback.TemplateOutput;
+                };
+                success = !processOutput.Equals("// Error Generating Output", StringComparison.OrdinalIgnoreCase);
+                //this.LogErrors(runner.Errors);
             }
             catch (ThreadAbortException)
             {
@@ -572,19 +571,11 @@ namespace SubSonic.Core.VisualStudio.Services
             }
         }
 
-        private string GetVSInstallDir(RegistryKey applicationRoot)
-        {
-            string str = string.Empty;
-            if (applicationRoot != null)
-            {
-                str = applicationRoot.GetValue("InstallDir") as string;
-            }
-            return ((str != null) ? str.Replace(@"\\", @"\") : string.Empty);
-        }
+        
 
         private bool RunFactoryIsAlive()
         {
-            return runFactory?.IsAlive ?? default;
+            return runFactory?.IsRunFactoryAlive() ?? default;
         }
     }
 }

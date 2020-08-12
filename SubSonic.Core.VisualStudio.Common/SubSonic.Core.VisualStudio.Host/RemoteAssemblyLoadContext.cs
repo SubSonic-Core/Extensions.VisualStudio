@@ -5,6 +5,7 @@ using System.Runtime.Loader;
 
 namespace SubSonic.Core.VisualStudio.Host
 {
+    [Serializable]
     public class RemoteAssemblyLoadContext
         : AssemblyLoadContext
     {
@@ -14,7 +15,7 @@ namespace SubSonic.Core.VisualStudio.Host
 #else
         public virtual void Unload()
         {
-            throw new PlatformNotSupportedException("Feature not supported by runtime.");
+            throw new NotSupportedException("Feature not supported by runtime.");
         }
 
 #if NETSTANDARD || NETFRAMEWORK

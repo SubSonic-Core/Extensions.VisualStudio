@@ -46,6 +46,8 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
             ThreadHelper.ThrowIfNotOnUIThread();
 
+            bool errors = false;
+
             if ((Package?.IsTemplateInProcess ?? false) && Package?.ProcessResults != null)
             {
                 callback = Package.TextTemplatingCallback.DeepCopy();
@@ -62,7 +64,7 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
                 callback = new TextTemplatingCallback();
 
-                ITextTemplating processor = GetTextTemplatingAsync().Result;
+                ITextTemplating processor = GetTextTemplating();
 
                 if (processor == null)
                 {
@@ -75,12 +77,12 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 {
                     result = ProcessTemplate(inputFileName, inputFileContent, processor, hierarchy);
 
-                    callback.Errors |= processor.EndErrorSession();
+                    errors = callback.Errors.HasErrors || processor.EndErrorSession();
                     MarkProjectForTextTemplating(hierarchy);
                 }
             }
 
-            if (callback.Errors)
+            if (errors)
             {
                 if (ErrorList is IVsErrorList vsErrorList)
                 {
@@ -98,8 +100,10 @@ namespace SubSonic.Core.VisualStudio.CustomTools
 
             result = result?.TrimStart(Environment.NewLine.ToCharArray()) ?? ERROR_OUTPUT;
 
-            byte[] bytes = callback.OutputEncoding.GetBytes(result);
-            byte[] preamble = callback.OutputEncoding.GetPreamble();
+            Encoding encoding = callback.GetOutputEncoding();
+
+            byte[] bytes = encoding.GetBytes(result);
+            byte[] preamble = encoding.GetPreamble();
             if ((preamble != null) && (preamble.Length != 0))
             {
                 bool success = false;
@@ -129,11 +133,15 @@ namespace SubSonic.Core.VisualStudio.CustomTools
             return bytes;
         }
 
-        protected virtual async Task<ITextTemplating> GetTextTemplatingAsync()
+        protected virtual ITextTemplating GetTextTemplating()
         {
-            ITextTemplating processor = await GetServiceAsync<SSubSonicTemplatingService, ITextTemplating>();
+            ITextTemplating processor = ThreadHelper.JoinableTaskFactory.Run<ITextTemplating>(async () =>
+            {
+                return await GetServiceAsync<SSubSonicTemplatingService, ITextTemplating>();
+            });
 
-            if (processor is ITextTemplatingEngineHost host)
+            if (processor is ITextTemplatingComponents components &&
+                components.Host is ITextTemplatingEngineHost host)
             {
                 host.StandardAssemblyReferences.AddIfNotExist("System.Data");
                 host.StandardAssemblyReferences.AddIfNotExist("System.Data.Common");
@@ -200,9 +208,9 @@ namespace SubSonic.Core.VisualStudio.CustomTools
         {
             string content = null;
 
-            if (processor is ITextTemplatingService service)
+            if (processor is ITextTemplatingComponents service)
             {
-                RuntimeKind runtime = (RuntimeKind)(service.GetHostOption(nameof(TemplateSettings.RuntimeKind)) ?? RuntimeKind.Default);
+                RuntimeKind runtime = (RuntimeKind)(service.Host.GetHostOption(nameof(TemplateSettings.RuntimeKind)) ?? RuntimeKind.Default);
 
                 if (runtime != RuntimeKind.NetCore)
                 {
@@ -210,9 +218,11 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 }
                 else
                 {
-                    if (service is IProcessTextTemplating process)
+                    if (processor is IProcessTextTemplating process)
                     {
-                        content = process.ProcessTemplateAsync(inputFileName, inputFileContent, callback, hierarchy).Result;
+                        content = ThreadHelper.JoinableTaskFactory.Run(async ()=> 
+                          await process.ProcessTemplateAsync(inputFileName, inputFileContent, callback, hierarchy)
+                        );
                     }
                 }
             }

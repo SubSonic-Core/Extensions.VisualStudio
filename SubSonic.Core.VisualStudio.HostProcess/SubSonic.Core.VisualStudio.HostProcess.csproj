@@ -12,6 +12,10 @@
     <ProjectReference Include="..\SubSonic.Core.VisualStudio.Common\SubSonic.Core.VisualStudio.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Server\" />
+  </ItemGroup>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="XCOPY $(OutDir)*.* $(SolutionDir)T4HostProcess\ /y&#xD;&#xA;" />
   </Target>

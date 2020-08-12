@@ -69,7 +69,7 @@ namespace SubSonic.Core.VisualStudio.Templating
             _ = WriteLineAsync(value);
         }
 
-        public override async System.Threading.Tasks.Task WriteAsync(string value)
+        public override async Task WriteAsync(string value)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -79,7 +79,7 @@ namespace SubSonic.Core.VisualStudio.Templating
             }
         }
 
-        public override async System.Threading.Tasks.Task WriteLineAsync()
+        public override async Task WriteLineAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -89,7 +89,7 @@ namespace SubSonic.Core.VisualStudio.Templating
             }
         }
 
-        public override async System.Threading.Tasks.Task WriteLineAsync(string value)
+        public override async Task WriteLineAsync(string value)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 

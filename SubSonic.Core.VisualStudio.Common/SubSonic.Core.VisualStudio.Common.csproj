@@ -9,9 +9,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.153.0" />
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0104-g9c171000b2" />
-    <PackageReference Include="SubSonic.Core.Extensions" Version="1.0.0-preview-0032-gb548e02158" />
-    <PackageReference Include="SubSonic.Core.Remoting" Version="1.0.0-preview-0032-gb548e02158" />
+    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0153-g0bc012a0ab" />
+    <PackageReference Include="SubSonic.Core.Extensions" Version="1.0.0-preview-0036-g48c42f084d" />
+    <PackageReference Include="SubSonic.Core.Remoting" Version="1.0.0-preview-0047-ga059d0155b" />
     <PackageReference Include="System.CodeDom" Version="4.7.0" />
     <PackageReference Condition="'$(TargetFramework)'=='netstandard2.0' OR '$(TargetFramework)'=='netcoreapp3.1'" Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
@@ -28,6 +28,21 @@
 
   <ItemGroup Condition="'$(TargetFramework)'=='net472'">
     <Reference Include="System.Runtime.Remoting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="SubSonicCoreVisualStudioCommonResources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SubSonicCoreVisualStudioCommonResources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="SubSonicCoreVisualStudioCommonResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SubSonicCoreVisualStudioCommonResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>
