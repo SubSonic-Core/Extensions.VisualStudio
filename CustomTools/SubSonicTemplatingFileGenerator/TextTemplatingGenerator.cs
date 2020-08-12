@@ -147,6 +147,7 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 host.StandardAssemblyReferences.AddIfNotExist("System.Data.Common");
                 host.StandardAssemblyReferences.AddIfNotExist("System.ComponentModel");
                 host.StandardAssemblyReferences.AddIfNotExist("SubSonic.Core.DataAccessLayer");
+                host.StandardAssemblyReferences.AddIfNotExist("SubSonic.Core.Abstractions");
 
                 host.StandardImports.AddIfNotExist("SubSonic");
             }

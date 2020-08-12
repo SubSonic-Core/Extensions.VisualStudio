@@ -18,8 +18,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SubSonic.Core.VisualStudio.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SubSonic.Core.VisualStudio.Testing", "SubSonic.Core.VisualStudio.Testing\SubSonic.Core.VisualStudio.Testing.csproj", "{995A4B2F-4588-4033-929E-30F90BD364A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientConsole", "SubSonic.Core.VisualStudio.FrameworkClient\ClientConsole\ClientConsole.csproj", "{D254A29A-0342-4522-8BB6-43C121436AED}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,10 +48,6 @@ Global
 		{995A4B2F-4588-4033-929E-30F90BD364A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{995A4B2F-4588-4033-929E-30F90BD364A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{995A4B2F-4588-4033-929E-30F90BD364A5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D254A29A-0342-4522-8BB6-43C121436AED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D254A29A-0342-4522-8BB6-43C121436AED}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D254A29A-0342-4522-8BB6-43C121436AED}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D254A29A-0342-4522-8BB6-43C121436AED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

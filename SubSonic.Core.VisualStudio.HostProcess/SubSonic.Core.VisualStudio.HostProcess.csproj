@@ -9,11 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SubSonic.Core.VisualStudio.Common\SubSonic.Core.VisualStudio.Common.csproj" />
+    <Compile Remove="Server\**" />
+    <EmbeddedResource Remove="Server\**" />
+    <None Remove="Server\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Server\" />
+    <ProjectReference Include="..\SubSonic.Core.VisualStudio.Common\SubSonic.Core.VisualStudio.Common.csproj" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
