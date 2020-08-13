@@ -61,17 +61,25 @@ namespace SubSonic.Core.VisualStudio.Host
 
         public ITextTemplatingCallback StartTransformation(Guid runnerId)
         {
-            ITextTemplatingCallback result = runFactory.StartTransformation(runnerId);
-
-            if (result.Errors.HasErrors)
+            try
             {
-                foreach(var error in result.Errors)
-                {
-                    Console.Error.WriteLine($"{error.Location}({error.Location.Line},{error.Location.Column}){((error.ErrorNumber?.Length ?? 0) > 0 ? $": {error.ErrorNumber}" : "")} {(error.IsWarning ? "warning" : "error")}: {error.Message}");
-                }
-            }
+                ITextTemplatingCallback result = runFactory.StartTransformation(runnerId);
 
-            return result;
+                if (result.Errors.HasErrors)
+                {
+                    foreach (var error in result.Errors)
+                    {
+                        Console.Error.WriteLine($"{error.Location}({error.Location.Line},{error.Location.Column}){((error.ErrorNumber?.Length ?? 0) > 0 ? $": {error.ErrorNumber}" : "")} {(error.IsWarning ? "warning" : "error")}: {error.Message}");
+                    }
+                }
+
+                return result;
+            }
+            catch(Exception ex)
+            {
+                Console.Error.WriteLine(ex.ToString());
+            }
+            return default;
         }
 
         public TemplateErrorCollection GetErrors(Guid runnerId)
