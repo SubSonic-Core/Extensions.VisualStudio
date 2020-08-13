@@ -155,10 +155,6 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <VSIXSubPath>T4HostProcess</VSIXSubPath>
     </Content>
-    <Content Include="T4HostProcess\Mono.TextTemplating.Roslyn.dll">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <VSIXSubPath>T4HostProcess</VSIXSubPath>
-    </Content>
     <Content Include="T4HostProcess\NamedPipeServerStream.NetFrameworkVersion.dll">
       <IncludeInVSIX>true</IncludeInVSIX>
       <VSIXSubPath>T4HostProcess</VSIXSubPath>

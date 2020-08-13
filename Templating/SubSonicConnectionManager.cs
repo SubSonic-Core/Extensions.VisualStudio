@@ -46,5 +46,10 @@ namespace SubSonic.Core.VisualStudio.Templating
                 ConnectionManager[key] = connection;
             }
         }
+
+        public bool ContainsKey(string key)
+        {
+            return ConnectionManager.ContainsKey(key);
+        }
     }
 }

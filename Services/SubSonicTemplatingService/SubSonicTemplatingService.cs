@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.Win32;
 using Mono.TextTemplating;
-using Mono.TextTemplating.CodeCompilation;
 using Mono.VisualStudio.TextTemplating;
 using Mono.VisualStudio.TextTemplating.VSHost;
 using SubSonic.Core.Remoting;
@@ -12,12 +11,10 @@ using SubSonic.Core.VisualStudio.Common;
 using SubSonic.Core.VisualStudio.Templating;
 using System;
 using System.CodeDom.Compiler;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Security;
 using System.Security.Policy;
 using System.Text.RegularExpressions;
@@ -65,10 +62,21 @@ namespace SubSonic.Core.VisualStudio.Services
             this.transformationHost.GetHostOptionEventHandler += TransformationHost_GetHostOptionEventHandler;
             this.transformationHost.ResolveAssemblyReferenceEventHandler += TransformationHost_ResolveAssemblyReferenceEventHandler;
             this.transformationHost.ExpandAllVariablesEventHandler += TransformationHost_ExpandAllVariablesEventHandler;
+            this.transformationHost.ResolveParameterValueEventHandler += TransformationHost_ResolveParameterValueEventHandler;
 
             singleton = this;
 
             package.DTE.Events.SolutionEvents.AfterClosing += SolutionEvents_AfterClosing;
+        }
+
+        private string TransformationHost_ResolveParameterValueEventHandler(object sender, Host.ResolveParameterValueEventArgs args)
+        {
+            if (ConnectionManager.ContainsKey(args.ParameterKey.ParameterName))
+            {
+                return ConnectionManager[args.ParameterKey.ParameterName].SafeConnectionString;
+            }
+
+            return default;
         }
 
         private string TransformationHost_ExpandAllVariablesEventHandler(object sender, Host.ExpandAllVariablesEventArgs args)
@@ -127,6 +135,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
         private void SolutionEvents_AfterClosing()
         {
+            Package()?.CancellationTokenSource.Cancel();
             errorListProvider?.Tasks?.Clear();
         }
 
@@ -160,7 +169,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
                     foreach (var key in connectionManager.Connections.Keys)
                     {
-                        manager.Add(key, new SubSonicDataConnection(connectionManager.Connections[key].Connection));
+                        manager.Add(key.ToConnectionKey(), new SubSonicDataConnection(connectionManager.Connections[key].Connection));
                     }
 
                     return manager;
@@ -443,6 +452,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     transformationHost.ResolveAssemblyReferenceEventHandler -= TransformationHost_ResolveAssemblyReferenceEventHandler;
                     transformationHost.GetHostOptionEventHandler -= TransformationHost_GetHostOptionEventHandler;
                     transformationHost.ExpandAllVariablesEventHandler -= TransformationHost_ExpandAllVariablesEventHandler;
+                    transformationHost.ResolveParameterValueEventHandler -= TransformationHost_ResolveParameterValueEventHandler;
                     package.DTE.Events.SolutionEvents.AfterClosing -= SolutionEvents_AfterClosing;
                     errorListProvider.Dispose();
                     subSonicOutput.Dispose();

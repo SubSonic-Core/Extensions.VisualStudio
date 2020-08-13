@@ -90,102 +90,116 @@ namespace SubSonic.Core.VisualStudio.Services
 
                     try
                     {
-                        runFactory = await GetTransformationRunFactoryAsync(splitOutput, splitError, SubSonicCoreVisualStudioAsyncPackage.Singleton.CancellationTokenSource.Token);
-                    }
-                    catch (Exception ex)
-                    {
-                        await LogErrorAsync(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.ExceptionStartingRunFactoryProcess, ex), new Location(inputFilename));
-                        runFactory = null;
-                    }
-
-                    if (runFactory == null)
-                    {
-                        await LogErrorAsync(SubSonicCoreErrors.ErrorStartingRunFactoryProcess, new Location(TemplateFile));
-                        if (debugging)
+                        try
                         {
-                            ProcessTemplateEventArgs args = new ProcessTemplateEventArgs
-                            {
-                                TemplateOutput = SubSonicCoreErrors.DebugErrorOutput,
-                                Succeeded = false
-                            };
-                            this.OnTransformProcessCompleted(args);
+                            runFactory = await GetTransformationRunFactoryAsync(splitOutput, splitError, SubSonicCoreVisualStudioAsyncPackage.Singleton.CancellationTokenSource.Token);
                         }
-                        return SubSonicCoreErrors.DebugErrorOutput;
-                    }
-
-                    if (!SubSonicCoreVisualStudioAsyncPackage.Singleton.CancellationTokenSource.IsCancellationRequested)
-                    {   // we have not been cancelled so let's continue
-                        // we need to prepare the transformation and send the important parts over to the T4 Host Process
-                        if (Engine.PrepareTransformationRunner(content, Component.Host, runFactory) is IProcessTransformationRunner runner)
+                        catch (Exception ex)
                         {
-                            if (!debugging)
-                            {   // if we are not debugging we can wait for the process to finish
-                                // and we do not need to attach to the host process.
+                            await LogErrorAsync(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.ExceptionStartingRunFactoryProcess, ex), new Location(inputFilename));
+                            runFactory = null;
+                        }
 
-                                if (runFactory.StartTransformation(runner.RunnerId) is TextTemplatingCallback result)
+                        if (runFactory == null)
+                        {
+                            await LogErrorAsync(SubSonicCoreErrors.ErrorStartingRunFactoryProcess, new Location(TemplateFile));
+                            if (debugging)
+                            {
+                                ProcessTemplateEventArgs args = new ProcessTemplateEventArgs
                                 {
-                                    if (result.Errors.HasErrors)
-                                    {
-                                        await transformationHost.LogErrorsAsync(result.Errors);
-                                    }
-
-                                    Component.Callback.SetFileExtension(result.Extension);
-
-                                    return result.TemplateOutput;
-                                }
+                                    TemplateOutput = SubSonicCoreErrors.DebugErrorOutput,
+                                    Succeeded = false
+                                };
+                                this.OnTransformProcessCompleted(args);
                             }
-                            else
-                            {   // when debugging this we will attach to the process
-                                // the ui thread will be waiting for a callback from process to complete generation of file.
-                                bool success = false;
+                            return SubSonicCoreErrors.DebugErrorOutput;
+                        }
 
+                        if (!SubSonicCoreVisualStudioAsyncPackage.Singleton.CancellationTokenSource.IsCancellationRequested)
+                        {   // we have not been cancelled so let's continue
+                            // we need to prepare the transformation and send the important parts over to the T4 Host Process
+                            if (Engine.PrepareTransformationRunner(content, Component.Host, runFactory) is IProcessTransformationRunner runner)
+                            {
                                 try
                                 {
-                                    foreach (EnvDTE.Process process in package.DTE.Debugger.LocalProcesses)
-                                    {
-                                        if (process.ProcessID == this.transformProcess.Id)
+                                    if (!debugging)
+                                    {   // if we are not debugging we can wait for the process to finish
+                                        // and we do not need to attach to the host process.
+
+                                        if (runFactory.StartTransformation(runner.RunnerId) is TextTemplatingCallback result)
                                         {
-                                            process.Attach();
-                                            success = true;
-                                            break;
+                                            if (result.Errors.HasErrors)
+                                            {
+                                                await transformationHost.LogErrorsAsync(result.Errors);
+                                            }
+
+                                            Component.Callback.SetFileExtension(result.Extension);
+
+                                            return result.TemplateOutput;
+                                        }
+                                    }
+                                    else
+                                    {   // when debugging this we will attach to the process
+                                        // the ui thread will be waiting for a callback from process to complete generation of file.
+                                        bool success = false;
+
+                                        try
+                                        {
+                                            foreach (EnvDTE.Process process in package.DTE.Debugger.LocalProcesses)
+                                            {
+                                                if (process.ProcessID == this.transformProcess.Id)
+                                                {
+                                                    process.Attach();
+                                                    success = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        catch (Exception attachException)
+                                        {
+                                            await LogErrorAsync(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.ExceptionAttachingToRunFactoryProcess, attachException), new Location(inputFilename));
+                                        }
+
+                                        if (success)
+                                        {
+                                            Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
+                                            this.debugThread = new Thread(() => StartTransformation(inputFilename, runner, uiDispatcher));
+                                            this.debugThread.Start();
+                                        }
+                                        else
+                                        {
+                                            await LogErrorAsync(SubSonicCoreErrors.ErrorAttachingToRunFactoryProcess, new Location(inputFilename));
+                                            ProcessTemplateEventArgs args = new ProcessTemplateEventArgs
+                                            {
+                                                TemplateOutput = SubSonicCoreErrors.DebugErrorOutput,
+                                                Succeeded = false
+                                            };
+                                            this.OnTransformProcessCompleted(args);
                                         }
                                     }
                                 }
-                                catch (Exception attachException)
+                                finally
                                 {
-                                    await LogErrorAsync(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.ExceptionAttachingToRunFactoryProcess, attachException), new Location(inputFilename));
+                                    runFactory.DisposeOfRunner(runner.RunnerId); // clean up the runner
                                 }
-
-                                if (success)
+                            }
+                            else
+                            {
+                                ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
+                                if (debugging)
                                 {
-                                    Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
-                                    this.debugThread = new Thread(() => StartTransformation(inputFilename, runner, uiDispatcher));
-                                    this.debugThread.Start();
-                                }
-                                else
-                                {
-                                    await LogErrorAsync(SubSonicCoreErrors.ErrorAttachingToRunFactoryProcess, new Location(inputFilename));
-                                    ProcessTemplateEventArgs args = new ProcessTemplateEventArgs
-                                    {
-                                        TemplateOutput = SubSonicCoreErrors.DebugErrorOutput,
-                                        Succeeded = false
-                                    };
+                                    args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
+                                    args.Succeeded = false;
                                     this.OnTransformProcessCompleted(args);
                                 }
-                            }
-                        }
-                        else
-                        {
-                            ProcessTemplateEventArgs args = new ProcessTemplateEventArgs();
-                            if (debugging)
-                            {
-                                args.TemplateOutput = SubSonicCoreErrors.DebugErrorOutput;
-                                args.Succeeded = false;
-                                this.OnTransformProcessCompleted(args);
-                            }
 
-                            await LogErrorsAsync(transformationHost.Errors.ToCompilerErrorCollection());
+                                await LogErrorsAsync(transformationHost.Errors.ToCompilerErrorCollection());
+                            }
                         }
+                    }
+                    finally
+                    {
+                        RemotingServices.Disconnect(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}"));
                     }
                 }
             }

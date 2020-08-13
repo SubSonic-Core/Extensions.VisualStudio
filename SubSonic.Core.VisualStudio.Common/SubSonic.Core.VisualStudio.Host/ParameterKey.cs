@@ -10,21 +10,24 @@ namespace SubSonic.Core.VisualStudio.Host
 	public struct ParameterKey
 			: IEquatable<ParameterKey>
 	{
-		public ParameterKey(string processorName, string directiveName, string parameterName)
+		public ParameterKey(string directiveId, string processorName, string parameterName)
 		{
-			this.processorName = processorName ?? "";
-			this.directiveName = directiveName ?? "";
-			this.parameterName = parameterName ?? "";
+			this.ProcessorName = processorName ?? "";
+			this.DirectiveId = directiveId ?? "";
+			this.ParameterName = parameterName ?? "";
 			unchecked
 			{
-				hashCode = this.processorName.GetHashCode()
-					^ this.directiveName.GetHashCode()
-					^ this.parameterName.GetHashCode();
+				hashCode = this.ProcessorName.GetHashCode()
+					^ this.DirectiveId.GetHashCode()
+					^ this.ParameterName.GetHashCode();
 			}
 		}
 
-        private readonly string processorName, directiveName, parameterName;
-        private readonly int hashCode;
+		public string DirectiveId { get; }
+		public string ProcessorName { get; }
+		public string ParameterName { get; }
+
+		private readonly int hashCode;
 
 		public override bool Equals(object obj)
 		{
@@ -33,7 +36,17 @@ namespace SubSonic.Core.VisualStudio.Host
 
 		public bool Equals(ParameterKey other)
 		{
-			return processorName == other.processorName && directiveName == other.directiveName && parameterName == other.parameterName;
+			return ProcessorName == other.ProcessorName && DirectiveId == other.DirectiveId && ParameterName == other.ParameterName;
+		}
+
+		public static bool operator ==(ParameterKey left, ParameterKey right)
+        {
+			return left.Equals(right);
+        }
+
+		public static bool operator !=(ParameterKey left, ParameterKey right)
+		{
+			return !left.Equals(right);
 		}
 
 		public override int GetHashCode()

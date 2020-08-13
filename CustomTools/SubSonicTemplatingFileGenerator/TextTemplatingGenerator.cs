@@ -77,7 +77,9 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 {
                     result = ProcessTemplate(inputFileName, inputFileContent, processor, hierarchy);
 
-                    errors = callback.Errors.HasErrors || processor.EndErrorSession();
+                    errors |= callback.Errors.HasErrors;
+                    errors |= processor.EndErrorSession();
+
                     MarkProjectForTextTemplating(hierarchy);
                 }
             }

@@ -29,7 +29,7 @@ namespace SubSonic.Core.VisualStudio.Services
 
         private readonly List<string> includePaths;
         private readonly Dictionary<RuntimeKind, List<string>> referencePaths;
-        private readonly Dictionary<ParameterKey, string> parameters;
+        private readonly Dictionary<string, string> parameters;
         private readonly Dictionary<string, KeyValuePair<string, string>> directiveProcessors;
         
         private readonly TemplateErrorCollection errors;
@@ -79,10 +79,40 @@ namespace SubSonic.Core.VisualStudio.Services
             }
         }
 
+        [NonSerialized]
+        private ResolveParameterValueEventHandler resolveParameterValueEventHandler;
+
+        public event ResolveParameterValueEventHandler ResolveParameterValueEventHandler
+        {
+            add
+            {
+                resolveParameterValueEventHandler += value;
+            }
+            remove
+            {
+                resolveParameterValueEventHandler -= value;
+            }
+        }
+
+        [NonSerialized]
+        private ResolveDirectiveProcessorEventHandler resolveDirectiveProcessorEventHandler;
+
+        public event ResolveDirectiveProcessorEventHandler ResolveDirectiveProcessorEventHandler
+        {
+            add
+            {
+                resolveDirectiveProcessorEventHandler += value;
+            }
+            remove
+            {
+                resolveDirectiveProcessorEventHandler -= value;
+            }
+        }
+
         public RemoteTransformationHost()
             : base()
         {
-            parameters = new Dictionary<ParameterKey, string>();
+            parameters = new Dictionary<string, string>();
             includePaths = new List<string>();
             referencePaths = new Dictionary<RuntimeKind, List<string>>();
             directiveProcessors = new Dictionary<string, KeyValuePair<string, string>>();
@@ -174,7 +204,7 @@ namespace SubSonic.Core.VisualStudio.Services
             directiveProcessors.Add(key, processor);
         }
 
-        public void AddParameter(ParameterKey key, string value)
+        public void AddParameter(string key, string value)
         {
             parameters.Add(key, value);
         }
@@ -327,26 +357,63 @@ namespace SubSonic.Core.VisualStudio.Services
             return path;
         }        
 
+        public void OnResolveDirectiveProcessor(string processorName)
+        {
+            if (resolveDirectiveProcessorEventHandler != null && !directiveProcessors.ContainsKey(processorName))
+            {
+                Type processorType = resolveDirectiveProcessorEventHandler(this, new ResolveDirectiveProcessorEventArgs(processorName));
+
+                if (processorType != null)
+                {
+                    AddDirective(processorName, new KeyValuePair<string, string>(processorType.Assembly.Location, processorType.AssemblyQualifiedName));
+                }
+            }
+        }
+
         public override Type ResolveDirectiveProcessor(string processorName)
         {
+            OnResolveDirectiveProcessor(processorName);
+
             if (!directiveProcessors.TryGetValue(processorName, out KeyValuePair<string, string> value))
             {
                 throw new Exception(string.Format("No directive processor registered as '{0}'", processorName));
             }
 
-            var asmPath = ResolveAssemblyReference(value.Value);
-            if (asmPath.IsNullOrEmpty())
+            var assemblyPath = ResolveAssemblyReference(value.Value);
+
+            if (!Path.IsPathRooted(assemblyPath))
             {
                 throw new Exception(string.Format("Could not resolve assembly '{0}' for directive processor '{1}'", value.Value, processorName));
             }
-            var asm = Assembly.LoadFrom(asmPath);
-            return asm.GetType(value.Key, true);
+
+#if NETSTANDARD || NETCOREAPP
+            var assembly = RemoteTransformationRunFactory.Context.LoadFromAssemblyPath(assemblyPath);
+#else
+            var assembly = Assembly.LoadFrom(assemblyPath);
+#endif
+            return assembly.GetType(value.Key, true);
+        }
+
+        private void OnResolveParameterValue(ParameterKey parameterKey)
+        {
+            if (resolveParameterValueEventHandler != null && !parameters.ContainsKey(parameterKey.ParameterName))
+            {
+                string value = resolveParameterValueEventHandler(this, new ResolveParameterValueEventArgs(parameterKey));
+
+                if (value.IsNotNullOrEmpty())
+                {
+                    AddParameter(parameterKey.ParameterName, value);
+                }
+            }
         }
 
         public override string ResolveParameterValue(string directiveId, string processorName, string parameterName)
         {
-            var key = new ParameterKey(processorName, directiveId, parameterName);
-            if (parameters.TryGetValue(key, out var value))
+            var key = new ParameterKey(directiveId, processorName, parameterName);
+
+            OnResolveParameterValue(key);
+
+            if (parameters.TryGetValue(key.ParameterName, out var value))
             {
                 return value;
             }

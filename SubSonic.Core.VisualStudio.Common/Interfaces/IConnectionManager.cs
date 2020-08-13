@@ -8,5 +8,7 @@ namespace SubSonic.Core.VisualStudio
         IDataConnection this[string key] { get; }
 
         void Add(string key, IDataConnection connection);
+
+        bool ContainsKey(string key);
     }
 }

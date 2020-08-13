@@ -9,6 +9,7 @@ using Interop = Microsoft.VisualStudio.OLE.Interop;
 
 namespace SubSonic.Core.VisualStudio.Wizards
 {
+    using SubSonic.Core.VisualStudio.Common;
     using SubSonic.Core.VisualStudio.Forms;
 
     public class DataContextWizard
@@ -64,7 +65,7 @@ namespace SubSonic.Core.VisualStudio.Wizards
                         {
                             string connectionKey = inputForm.SelectedConnectionName;
 
-                            replacementsDictionary.Add("$connectionKey$", connectionKey.Substring(connectionKey.IndexOf("#")).Replace("#", "NS").Replace(".", "_"));
+                            replacementsDictionary.Add("$connectionKey$", connectionKey.ToConnectionKey());
                         }
                         else
                         {

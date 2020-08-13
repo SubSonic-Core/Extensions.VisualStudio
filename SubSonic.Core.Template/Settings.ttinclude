@@ -15,8 +15,6 @@
 <#+
 public class Settings
 {
-	const string connection = $connectionKey$;
-
 	public static ITextTemplatingEngineHost Host { get; set; }
 
 	public string[] ExcludeTables
@@ -45,9 +43,9 @@ public class Settings
 	{
 		get
 		{
-			if (!string.IsNullOrEmpty(connection))
+			if (!string.IsNullOrEmpty($connectionKey$))
 			{
-				return connection;
+				return $connectionKey$;
 			}
 
 			throw new InvalidOperationException("Connection string was not injected.");
