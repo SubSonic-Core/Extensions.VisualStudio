@@ -2,7 +2,7 @@
 <#@ include file="SqlServer.ttinclude" #>
 <#
 	Settings.Host = Host;
-	GeneratorContext Context = new GeneratorContext(Settings.Connection);
+	SqlGeneratorContext Context = new SqlGeneratorContext(Settings.Connection);
 #>
 using Microsoft.Extensions.DependencyInjection;
 using SubSonic;

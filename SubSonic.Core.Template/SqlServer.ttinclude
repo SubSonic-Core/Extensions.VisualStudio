@@ -1,24 +1,34 @@
-﻿﻿<#@ include file="$fileinputname$Settings.ttinclude" #>
+﻿﻿<#@ include file="DataContextSettings.ttinclude" #>
+<#@ assembly name="Microsoft.Extensions.Primitives" #>
+<#@ assembly name="Microsoft.Extensions.Options" #>
+<#@ assembly name="Microsoft.Extensions.DependencyInjection" #>
+<#@ assembly name="Microsoft.Extensions.DependencyInjection.Abstractions" #>
+<#@ assembly name="Microsoft.Extensions.Logging" #>
+<#@ assembly name="Microsoft.Extensions.Logging.Abstractions" #>
 <#@ assembly name="SubSonic.Extensions.SqlServer" #>
 <#@ assembly name="Microsoft.Data.SqlClient" #>
+<#@ import namespace="Microsoft.Extensions.Logging" #>
 <#@ import namespace="SubSonic.Extensions.SqlServer" #>
+<#@ import namespace="SubSonic.CodeGenerator" #>
 <#+
-public class GeneratorContext
-        : SubSonicContext
+public class SqlGeneratorContext
+    : GeneratorContext
 {
-    private readonly string connection;
+    public SqlGeneratorContext(string connection)
+        : base(connection, LogLevel.Debug) { }
 
-    public GeneratorContext(string connection)
-    {
-        this.connection = connection;
-    }
+    public SqlGeneratorContext(string connection, LogLevel logLevel)
+        : base(connection, logLevel) { }
 
     protected override void OnDbConfiguring(DbContextOptionsBuilder builder)
     {
-        builder.UseSqlClient((config, options) =>
-        {
-            config.ConnectionString = connection;
-        });
+        base.OnDbConfiguring(builder);
+
+        builder
+            .UseSqlClient((config, options) =>
+            {
+                config.ConnectionString = ConnectionString;
+            });
     }
 }
 #>

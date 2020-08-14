@@ -130,7 +130,13 @@ namespace SubSonic.Core.VisualStudio.Services
                                         {
                                             if (result.Errors.HasErrors)
                                             {
-                                                await transformationHost.LogErrorsAsync(result.Errors);
+                                                Callback.Errors.AddRange(result.Errors);
+
+                                                foreach (var templateError in result.Errors)
+                                                {
+                                                    await LogErrorAsync(templateError.Message, templateError.Location, templateError.IsWarning);
+                                                }
+
                                             }
 
                                             Component.Callback.SetFileExtension(result.Extension);
@@ -178,6 +184,14 @@ namespace SubSonic.Core.VisualStudio.Services
                                         }
                                     }
                                 }
+                                catch (Exception ex)
+                                {
+                                    if (TemplatingEngine.IsCriticalException(ex))
+                                    {
+                                        throw;
+                                    }
+                                    await LogErrorAsync(ex.ToString(), new Location(Host.TemplateFile));
+                                }
                                 finally
                                 {
                                     runFactory.DisposeOfRunner(runner.RunnerId); // clean up the runner
@@ -194,6 +208,21 @@ namespace SubSonic.Core.VisualStudio.Services
                                 }
 
                                 await LogErrorsAsync(transformationHost.Errors.ToCompilerErrorCollection());
+                            }
+                        }
+                    }
+                    catch (IOException) { 
+                        if (transformProcess != null)
+                        {
+                            try
+                            {
+                                transformProcess.Kill();
+                            }
+                            catch(Exception)
+                            { }
+                            finally
+                            {
+                                transformProcess = null;
                             }
                         }
                     }

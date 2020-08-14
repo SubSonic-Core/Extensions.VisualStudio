@@ -1,17 +1,11 @@
-﻿<#@ assembly name="EnvDTE" #>
+﻿<#@ assembly name="SubSonic.Core.DataAccessLayer" #>
+<#@ assembly name="SubSonic.Core.Abstractions" #>
 <#@ parameter type="System.String" name="$connectionKey$" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.Data" #>
-<#@ import namespace="System.Data.SqlClient" #>
 <#@ import namespace="System.Data.Common" #>
-<#@ import namespace="System.Diagnostics" #>
-<#@ import namespace="System.Globalization" #>
-<#@ import namespace="System.IO" #>
-<#@ import namespace="System.Linq" #>
-<#@ import namespace="System.Text" #>
-<#@ import namespace="System.Text.RegularExpressions" #>
-<#@ import namespace="System.IO" #>
-<#@ import namespace="EnvDTE" #>
+<#@ import namespace="SubSonic" #>
+<#@ import namespace="SubSonic.Core" #>
 <#+
 public class Settings
 {
@@ -49,21 +43,6 @@ public class Settings
 			}
 
 			throw new InvalidOperationException("Connection string was not injected.");
-		}
-	}
-
-	public static EnvDTE.Project Project
-	{
-		get
-		{
-			if (GetService<EnvDTE.DTE>() is EnvDTE.DTE dte)
-			{
-				if (dte.ActiveSolutionProjects is Array activeSolutionProjects)
-				{
-					return activeSolutionProjects.GetValue(0) as EnvDTE.Project;
-				}
-			}
-			return default;
 		}
 	}
 

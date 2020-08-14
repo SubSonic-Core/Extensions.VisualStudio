@@ -130,8 +130,6 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 }
             }
 
-            SqmFacade.T4TemplatedCodeGenerator();
-
             return bytes;
         }
 
@@ -148,10 +146,6 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 host.StandardAssemblyReferences.AddIfNotExist("System.Data");
                 host.StandardAssemblyReferences.AddIfNotExist("System.Data.Common");
                 host.StandardAssemblyReferences.AddIfNotExist("System.ComponentModel");
-                host.StandardAssemblyReferences.AddIfNotExist("SubSonic.Core.DataAccessLayer");
-                host.StandardAssemblyReferences.AddIfNotExist("SubSonic.Core.Abstractions");
-
-                host.StandardImports.AddIfNotExist("SubSonic");
             }
 
             return processor;

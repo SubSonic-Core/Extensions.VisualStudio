@@ -276,12 +276,20 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 if (!assembly.Success && reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
                 {   // found the reference
-                    return reference.Path;
+                    if (VerifyAssemblyValidity(reference.Path, out string path))
+                    {
+                        return path;
+                    }
+                    continue;
                 }
                 else if (reference.Name.Equals(assembly.Groups["name"].Value, StringComparison.OrdinalIgnoreCase) &&
                          Version.Parse(reference.Version) >= Version.Parse(assembly.Groups["version"].Value))
                 {
-                    return reference.Path;
+                    if (VerifyAssemblyValidity(reference.Path, out string path))
+                    {
+                        return path;
+                    }
+                    continue;
                 }
             }
 
@@ -294,15 +302,58 @@ namespace SubSonic.Core.VisualStudio.Services
             {
                 if (!assembly.Success && reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
                 {   // found the reference
-                    return reference.FullPath;
+                    if (VerifyAssemblyValidity(reference.FullPath, out string path))
+                    {
+                        return path;
+                    }
+                    continue;
                 }
                 else if (reference.StrongName.Equals(assembly.Groups["name"].Value, StringComparison.OrdinalIgnoreCase))
                 {
-                    return reference.FullPath;
+                    if (VerifyAssemblyValidity(reference.FullPath, out string path))
+                    {
+                        return path;
+                    }
+                    continue;
                 }
             }
 
             return assemblyReference;
+        }
+
+        private bool VerifyAssemblyValidity(string path, out string assemblyPath)
+        {
+            assemblyPath = path;
+
+            if (assemblyPath.Contains("\\ref\\"))
+            {   // strong possibility that this is a reference assembly
+                // banking on path structure being logical and in line with package build guidelines.
+                int index = assemblyPath.IndexOf("\\ref\\");
+                string[] _path = new[]
+                {
+                    assemblyPath.Substring(0, index),
+                    assemblyPath.Substring(index + "\\ref\\".Length)
+                };
+
+                if (Directory.Exists($"{_path[0]}\\runtimes"))
+                {  
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    {
+                        assemblyPath =$"{_path[0]}\\runtimes\\win\\lib\\{_path[1]}";
+                    }
+                    else if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    {
+                        assemblyPath = $"{_path[0]}\\runtimes\\unix\\lib\\{_path[1]}";
+                    }
+                }
+                else
+                {
+                    assemblyPath = assemblyPath.Replace("\\ref\\", "\\lib\\");
+                }                
+
+                return File.Exists(assemblyPath);
+            }
+            return true;
         }
 
         private string GetVSInstallDir(RegistryKey applicationRoot)
