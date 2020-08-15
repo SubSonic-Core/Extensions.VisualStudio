@@ -11,6 +11,8 @@ namespace SubSonic.Core.VisualStudio.Host
     public class RemoteTransformationRunner
         : TransformationRunner
     {
+        bool disposed;
+
 #if !NET472
         public RemoteTransformationRunner(TransformationRunFactory factory, Guid id)
             : base(factory, id)
@@ -25,7 +27,6 @@ namespace SubSonic.Core.VisualStudio.Host
 
         protected override void Unload()
         {
-            RemoteTransformationRunFactory.Context.Resolving -= ResolveReferencedAssemblies;
 #if NETCOREAPP
             RemoteTransformationRunFactory.Context.Unload();
 #endif
@@ -34,5 +35,25 @@ namespace SubSonic.Core.VisualStudio.Host
         public RemoteTransformationRunner(TransformationRunFactory factory, Guid id)
                 : base(factory, id) { }
 #endif
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (!disposed)
+            {
+                if (disposing)
+                {
+#if NETSTANDARD || NETCOREAPP
+                    Unload();
+                }
+
+                RemoteTransformationRunFactory.Context.Resolving -= ResolveReferencedAssemblies;
+#else
+                }
+#endif
+                disposed = true;
+            }
+        }
     }
 }

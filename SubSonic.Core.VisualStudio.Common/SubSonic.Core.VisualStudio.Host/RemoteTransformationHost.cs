@@ -155,6 +155,9 @@ namespace SubSonic.Core.VisualStudio.Services
             if (!StandardAssemblyReferences.Any(x => x == GetType().Assembly.Location))
             {
                 StandardAssemblyReferences.Add(GetType().Assembly.Location);
+                StandardAssemblyReferences.Add(OnResolveAssemblyReference("System.Data"));
+                StandardAssemblyReferences.Add(OnResolveAssemblyReference("System.Data.Common"));
+                StandardAssemblyReferences.Add(OnResolveAssemblyReference("System.ComponentModel"));
             }
         }
 

@@ -297,9 +297,8 @@ namespace SubSonic.Core.VisualStudio
 
                     subSonicTemplatingService.TransformProcessCompleted += SubSonicTemplatingService_TransformationProcessCompleted;
 
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                    _ = subSonicTemplatingService.ProcessTemplateAsync(filename, content, callback, hierarchy, true);
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                    ThreadHelper.JoinableTaskFactory.Run(async () => await subSonicTemplatingService.ProcessTemplateAsync(filename, content, callback, hierarchy, true));
+
                 }
                 catch(Exception)
                 {

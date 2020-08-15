@@ -5,12 +5,24 @@
 	Context = new SqlGeneratorContext(Settings.Connection);
 #>
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace $rootnamespace$.Models
+namespace TemplateIntegrationTest.DAL.Models
 {
 	<#foreach(Models.Table table in Context.Tables) {#>
 	public partial class <#=table.Name#>
 	{
+		public <#=table.Name#>() { }
+
+		<#foreach (Models.Column column in table.Columns.OrderBy(x => x.OrdinalPosition)) {#>
+		<#if (column.IsPrimaryKey == true) {#>
+		[Key]
+		<#}#>
+		public virtual <#=column.GetClrType().Name#> <#=column.ColumnName#> { get; set; }
+		<#}#>
 	}
-	<#}#>
+	<#} 
+	
+	WriteLine();#>
 }

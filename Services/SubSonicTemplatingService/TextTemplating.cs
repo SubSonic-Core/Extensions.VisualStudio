@@ -86,8 +86,6 @@ namespace SubSonic.Core.VisualStudio.Services
                 using (SplitOutputWriter splitOutput = new SplitOutputWriter(output, outputWindow))
                 using (SplitOutputWriter splitError = new SplitOutputWriter(error, outputWindow))
                 {
-                    IProcessTransformationRunFactory runFactory;
-
                     try
                     {
                         try
@@ -118,14 +116,14 @@ namespace SubSonic.Core.VisualStudio.Services
                         if (!SubSonicCoreVisualStudioAsyncPackage.Singleton.CancellationTokenSource.IsCancellationRequested)
                         {   // we have not been cancelled so let's continue
                             // we need to prepare the transformation and send the important parts over to the T4 Host Process
-                            if (Engine.PrepareTransformationRunner(content, Component.Host, runFactory) is IProcessTransformationRunner runner)
+                            if (Engine.PrepareTransformationRunner(content, Component.Host, runFactory, debugging) is IProcessTransformationRunner runner)
                             {
-                                try
-                                {
-                                    if (!debugging)
-                                    {   // if we are not debugging we can wait for the process to finish
-                                        // and we do not need to attach to the host process.
 
+                                if (!debugging)
+                                {   // if we are not debugging we can wait for the process to finish
+                                    // and we do not need to attach to the host process.
+                                    try
+                                    {
                                         if (runFactory.StartTransformation(runner.RunnerId) is TextTemplatingCallback result)
                                         {
                                             if (result.Errors.HasErrors)
@@ -144,58 +142,59 @@ namespace SubSonic.Core.VisualStudio.Services
                                             return result.TemplateOutput;
                                         }
                                     }
-                                    else
-                                    {   // when debugging this we will attach to the process
-                                        // the ui thread will be waiting for a callback from process to complete generation of file.
-                                        bool success = false;
-
-                                        try
+                                    catch (Exception ex)
+                                    {
+                                        if (TemplatingEngine.IsCriticalException(ex))
                                         {
-                                            foreach (EnvDTE.Process process in package.DTE.Debugger.LocalProcesses)
+                                            throw;
+                                        }
+                                        await LogErrorAsync(ex.ToString(), new Location(Host.TemplateFile));
+                                    }
+                                    finally
+                                    {
+                                        runFactory.DisposeOfRunner(runner.RunnerId); // clean up the runner
+                                    }
+                                }
+                                else
+                                {   // when debugging this we will attach to the process
+                                    // the ui thread will be waiting for a callback from process to complete generation of file.
+                                    bool success = false;
+
+                                    try
+                                    {
+                                        foreach (EnvDTE.Process process in package.DTE.Debugger.LocalProcesses)
+                                        {
+                                            if (process.ProcessID == (this.transformProcess?.Id ?? default))
                                             {
-                                                if (process.ProcessID == this.transformProcess.Id)
-                                                {
-                                                    process.Attach();
-                                                    success = true;
-                                                    break;
-                                                }
+                                                process.Attach();
+                                                success = true;
+                                                break;
                                             }
                                         }
-                                        catch (Exception attachException)
-                                        {
-                                            await LogErrorAsync(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.ExceptionAttachingToRunFactoryProcess, attachException), new Location(inputFilename));
-                                        }
-
-                                        if (success)
-                                        {
-                                            Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
-                                            this.debugThread = new Thread(() => StartTransformation(inputFilename, runner, uiDispatcher));
-                                            this.debugThread.Start();
-                                        }
-                                        else
-                                        {
-                                            await LogErrorAsync(SubSonicCoreErrors.ErrorAttachingToRunFactoryProcess, new Location(inputFilename));
-                                            ProcessTemplateEventArgs args = new ProcessTemplateEventArgs
-                                            {
-                                                TemplateOutput = SubSonicCoreErrors.DebugErrorOutput,
-                                                Succeeded = false
-                                            };
-                                            this.OnTransformProcessCompleted(args);
-                                        }
                                     }
-                                }
-                                catch (Exception ex)
-                                {
-                                    if (TemplatingEngine.IsCriticalException(ex))
+                                    catch (Exception attachException)
                                     {
-                                        throw;
+                                        await LogErrorAsync(string.Format(CultureInfo.CurrentCulture, SubSonicCoreErrors.ExceptionAttachingToRunFactoryProcess, attachException), new Location(inputFilename));
                                     }
-                                    await LogErrorAsync(ex.ToString(), new Location(Host.TemplateFile));
+
+                                    if (success)
+                                    {
+                                        Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
+                                        this.debugThread = new Thread(() => StartTransformation(inputFilename, runner, uiDispatcher));
+                                        this.debugThread.Start();
+                                    }
+                                    else
+                                    {
+                                        await LogErrorAsync(SubSonicCoreErrors.ErrorAttachingToRunFactoryProcess, new Location(inputFilename));
+                                        ProcessTemplateEventArgs args = new ProcessTemplateEventArgs
+                                        {
+                                            TemplateOutput = SubSonicCoreErrors.DebugErrorOutput,
+                                            Succeeded = false
+                                        };
+                                        this.OnTransformProcessCompleted(args);
+                                    }
                                 }
-                                finally
-                                {
-                                    runFactory.DisposeOfRunner(runner.RunnerId); // clean up the runner
-                                }
+                                
                             }
                             else
                             {
@@ -225,9 +224,7 @@ namespace SubSonic.Core.VisualStudio.Services
                                 transformProcess = null;
                             }
                         }
-                    }
-                    finally
-                    {
+
                         RemotingServices.Disconnect(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}"));
                     }
                 }
@@ -538,9 +535,14 @@ namespace SubSonic.Core.VisualStudio.Services
                 }
             }
 
-#pragma warning disable IDE0074 // Use compound assignment
-            return runFactory ?? (runFactory = await RemotingServices.ConnectAsync<IProcessTransformationRunFactory>(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}/{TransformationRunFactory.TransformationRunFactoryMethod}")));
-#pragma warning restore IDE0074 // Use compound assignment
+            if (!RunFactoryIsAlive())
+            {
+                return await RemotingServices.ConnectAsync<IProcessTransformationRunFactory>(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}/{TransformationRunFactory.TransformationRunFactoryMethod}"));
+            }
+            else
+            {
+                return runFactory;
+            }
         }
 
         private void StartTransformation(string filename, IProcessTransformationRunner runner, Dispatcher uiDispatcher)
@@ -549,7 +551,7 @@ namespace SubSonic.Core.VisualStudio.Services
             string processOutput = SubSonicCoreErrors.DebugErrorOutput;
             try
             {
-                if (this.runFactory.StartTransformation(runner.RunnerId) is TextTemplatingCallback result)
+                if (this.runFactory?.StartTransformation(runner.RunnerId) is TextTemplatingCallback result)
                 {
                     Callback.Errors.AddRange(result.Errors);
 
@@ -573,23 +575,20 @@ namespace SubSonic.Core.VisualStudio.Services
             }
             finally
             {
-                if (!success)
+                ProcessTemplateEventArgs result = new ProcessTemplateEventArgs
                 {
-                    ProcessTemplateEventArgs result = new ProcessTemplateEventArgs
-                    {
-                        TemplateOutput = processOutput,
-                        Succeeded = success
-                    };
+                    TemplateOutput = processOutput,
+                    Succeeded = success
+                };
 
 #pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
-                    uiDispatcher.BeginInvoke((Action) (() => {
+                uiDispatcher.BeginInvoke((Action)(() =>
+                {
 #pragma warning disable VSTHRD010 // Avoid legacy thread switching APIs
-                        FinishTransformation(filename, result);
+                    FinishTransformation(filename, result);
 #pragma warning restore VSTHRD010 // Avoid legacy thread switching APIs
-                    }), DispatcherPriority.Normal);
+                }), DispatcherPriority.Normal);
 #pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
-
-                }
             }
         }
 

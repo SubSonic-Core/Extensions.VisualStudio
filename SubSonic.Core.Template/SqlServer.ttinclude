@@ -7,10 +7,12 @@
 <#@ assembly name="Microsoft.Extensions.Primitives" #>
 <#@ assembly name="SubSonic.Extensions.SqlServer" #>
 <#@ assembly name="System.Linq.Expressions" #>
+<#@ assembly name="System.Linq.Queryable" #>
 
 <#@ import namespace="Microsoft.Extensions.Logging" #>
 <#@ import namespace="SubSonic.Extensions.SqlServer" #>
 <#@ import namespace="SubSonic.CodeGenerator" #>
+<#@ import namespace="System.Linq" #>
 <#@ import namespace="Models = SubSonic.CodeGenerator.Models" #>
 <#+
 public class SqlGeneratorContext

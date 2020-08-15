@@ -140,14 +140,6 @@ namespace SubSonic.Core.VisualStudio.CustomTools
                 return await GetServiceAsync<SSubSonicTemplatingService, ITextTemplating>();
             });
 
-            if (processor is ITextTemplatingComponents components &&
-                components.Host is ITextTemplatingEngineHost host)
-            {
-                host.StandardAssemblyReferences.AddIfNotExist("System.Data");
-                host.StandardAssemblyReferences.AddIfNotExist("System.Data.Common");
-                host.StandardAssemblyReferences.AddIfNotExist("System.ComponentModel");
-            }
-
             return processor;
         }
 
