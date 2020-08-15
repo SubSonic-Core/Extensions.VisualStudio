@@ -4,6 +4,7 @@ using ServiceWire.NamedPipes;
 using SubSonic.Core.VisualStudio.Host;
 using System;
 using System.Threading;
+using Microsoft.Data.SqlClient;
 
 namespace SubSonic.Core.VisualStudio.HostProcess
 {

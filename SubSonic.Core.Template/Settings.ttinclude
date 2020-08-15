@@ -1,6 +1,7 @@
-﻿<#@ assembly name="SubSonic.Core.DataAccessLayer" #>
-<#@ assembly name="SubSonic.Core.Abstractions" #>
-<#@ parameter type="System.String" name="$connectionKey$" #>
+﻿<#@ assembly name="SubSonic.Core.Abstractions" #>
+<#@ assembly name="SubSonic.Core.DataAccessLayer" #>
+<#@ assembly name="SubSonic.Core.Extensions" #>
+<#@ parameter type="System.String" name="NS7fe04ab3_DbSubSonic_dbo" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.Data" #>
 <#@ import namespace="System.Data.Common" #>
@@ -37,9 +38,9 @@ public class Settings
 	{
 		get
 		{
-			if (!string.IsNullOrEmpty($connectionKey$))
+			if (!string.IsNullOrEmpty(NS7fe04ab3_DbSubSonic_dbo))
 			{
-				return $connectionKey$;
+				return NS7fe04ab3_DbSubSonic_dbo;
 			}
 
 			throw new InvalidOperationException("Connection string was not injected.");

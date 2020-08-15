@@ -1,15 +1,17 @@
 ﻿﻿<#@ include file="DataContextSettings.ttinclude" #>
-<#@ assembly name="Microsoft.Extensions.Primitives" #>
-<#@ assembly name="Microsoft.Extensions.Options" #>
 <#@ assembly name="Microsoft.Extensions.DependencyInjection" #>
 <#@ assembly name="Microsoft.Extensions.DependencyInjection.Abstractions" #>
 <#@ assembly name="Microsoft.Extensions.Logging" #>
 <#@ assembly name="Microsoft.Extensions.Logging.Abstractions" #>
+<#@ assembly name="Microsoft.Extensions.Options" #>
+<#@ assembly name="Microsoft.Extensions.Primitives" #>
 <#@ assembly name="SubSonic.Extensions.SqlServer" #>
-<#@ assembly name="Microsoft.Data.SqlClient" #>
+<#@ assembly name="System.Linq.Expressions" #>
+
 <#@ import namespace="Microsoft.Extensions.Logging" #>
 <#@ import namespace="SubSonic.Extensions.SqlServer" #>
 <#@ import namespace="SubSonic.CodeGenerator" #>
+<#@ import namespace="Models = SubSonic.CodeGenerator.Models" #>
 <#+
 public class SqlGeneratorContext
     : GeneratorContext
@@ -30,5 +32,16 @@ public class SqlGeneratorContext
                 config.ConnectionString = ConnectionString;
             });
     }
+}
+
+protected SqlGeneratorContext Context { get; private set; } 
+
+protected override void Dispose(bool disposing)
+{
+	if (disposing)
+	{
+		Context?.Dispose();
+		Context = null;
+	}
 }
 #>

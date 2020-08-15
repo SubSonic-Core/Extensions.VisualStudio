@@ -2,25 +2,26 @@
 <#@ include file="SqlServer.ttinclude" #>
 <#
 	Settings.Host = Host;
-	SqlGeneratorContext Context = new SqlGeneratorContext(Settings.Connection);
+	Context = new SqlGeneratorContext(Settings.Connection);
 #>
 using Microsoft.Extensions.DependencyInjection;
 using SubSonic;
 using System;
 
-namespace $rootnamespace$
+namespace TemplateIntegrationTest.DAL
 {
-	public partial class $safeitemrootname$
+	public partial class DataContext
 		: SubSonicContext
 	{
 		private readonly IServiceCollection services = null;
 
-		public $safeitemrootname$(IServiceCollection services)
+		public DataContext(IServiceCollection services)
 		{
 			this.services = services ?? throw new ArgumentNullException(nameof(services));
 		}
 
-		#region ISubSonicSetCollection{TEntity} Collection Properties
-		#endregion
+		<#foreach(Models.Table table in Context.Tables) {#>
+		public ISubSonicSetCollection<Models.<#=table.Name#>> <#=table.Name.Pluralize()#> { get; protected set; }
+		<#}#>
 	}
 }

@@ -1,7 +1,16 @@
-﻿<#@ template language="C#" #>
+﻿<#@ template hostspecific="true" language="C#" #>
+<#@ include file="SqlServer.ttinclude" #>
+<#
+	Settings.Host = Host;
+	Context = new SqlGeneratorContext(Settings.Connection);
+#>
 using System;
 
 namespace $rootnamespace$.Models
 {
-
+	<#foreach(Models.Table table in Context.Tables) {#>
+	public partial class <#=table.Name#>
+	{
+	}
+	<#}#>
 }

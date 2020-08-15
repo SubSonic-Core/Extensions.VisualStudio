@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.Win32;
 using Mono.TextTemplating;
+using Mono.TextTemplating.CodeCompilation;
 using Mono.VisualStudio.TextTemplating;
 using Mono.VisualStudio.TextTemplating.VSHost;
 using SubSonic.Core.Remoting;
@@ -242,7 +243,7 @@ namespace SubSonic.Core.VisualStudio.Services
                             }
                         }
                     }
-                }
+                }                
 
                 // if not found look at the project references
                 if (!foundAssembly.IsMatch(path))
@@ -328,6 +329,7 @@ namespace SubSonic.Core.VisualStudio.Services
             if (assemblyPath.Contains("\\ref\\"))
             {   // strong possibility that this is a reference assembly
                 // banking on path structure being logical and in line with package build guidelines.
+                
                 int index = assemblyPath.IndexOf("\\ref\\");
                 string[] _path = new[]
                 {
@@ -335,15 +337,15 @@ namespace SubSonic.Core.VisualStudio.Services
                     assemblyPath.Substring(index + "\\ref\\".Length)
                 };
 
-                if (Directory.Exists($"{_path[0]}\\runtimes"))
+                if (Directory.Exists(Path.Combine(_path[0],"runtimes")))
                 {  
                     if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
-                        assemblyPath =$"{_path[0]}\\runtimes\\win\\lib\\{_path[1]}";
+                        assemblyPath = Path.Combine(_path[0], "runtimes\\win\\lib", _path[1]);
                     }
                     else if (Environment.OSVersion.Platform == PlatformID.Unix)
                     {
-                        assemblyPath = $"{_path[0]}\\runtimes\\unix\\lib\\{_path[1]}";
+                        assemblyPath = Path.Combine(_path[0], "runtimes\\unix\\lib", _path[1]);
                     }
                 }
                 else

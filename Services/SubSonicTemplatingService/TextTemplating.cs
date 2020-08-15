@@ -490,7 +490,7 @@ namespace SubSonic.Core.VisualStudio.Services
             }
 
             if ((transformProcess == null) || (!RunFactoryIsAlive() || transformProcess.HasExited))
-            {
+            {   // this host process is capable of supporting multiple runners
                 if (transformProcess != null && !transformProcess.HasExited)
                 {
                     transformProcess.Kill();
@@ -526,9 +526,9 @@ namespace SubSonic.Core.VisualStudio.Services
 
                 try
                 {
-                    //_ = Utilities.StartProcess(psi, output, error, out System.Diagnostics.Process theT4Host, cancellationToken);
+                    _ = Core.Utilities.StartProcess(psi, output, error, out System.Diagnostics.Process theT4Host, cancellationToken);
 
-                    //transformProcess = theT4Host;
+                    transformProcess = theT4Host;
                 }
                 catch (Exception ex)
                 {
@@ -536,11 +536,11 @@ namespace SubSonic.Core.VisualStudio.Services
 
                     return default;
                 }
-
-                runFactory = await RemotingServices.ConnectAsync<IProcessTransformationRunFactory>(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}/{TransformationRunFactory.TransformationRunFactoryMethod}"));
             }
 
-            return runFactory;
+#pragma warning disable IDE0074 // Use compound assignment
+            return runFactory ?? (runFactory = await RemotingServices.ConnectAsync<IProcessTransformationRunFactory>(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}/{TransformationRunFactory.TransformationRunFactoryMethod}")));
+#pragma warning restore IDE0074 // Use compound assignment
         }
 
         private void StartTransformation(string filename, IProcessTransformationRunner runner, Dispatcher uiDispatcher)
@@ -549,9 +549,16 @@ namespace SubSonic.Core.VisualStudio.Services
             string processOutput = SubSonicCoreErrors.DebugErrorOutput;
             try
             {
-                if (this.runFactory.StartTransformation(runner.RunnerId) is TextTemplatingCallback callback)
+                if (this.runFactory.StartTransformation(runner.RunnerId) is TextTemplatingCallback result)
                 {
-                    processOutput = callback.TemplateOutput;
+                    Callback.Errors.AddRange(result.Errors);
+
+                    foreach (var templateError in result.Errors)
+                    {
+                        ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LogErrorAsync(templateError.Message, templateError.Location, templateError.IsWarning));
+                    }
+
+                    processOutput = result.TemplateOutput;
                 };
                 success = !processOutput.Equals("// Error Generating Output", StringComparison.OrdinalIgnoreCase);
                 //this.LogErrors(runner.Errors);
@@ -562,7 +569,7 @@ namespace SubSonic.Core.VisualStudio.Services
             }
             catch (Exception exception)
             {
-               _ = LogErrorAsync(exception.ToString(), new Location(filename));
+                _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LogErrorAsync(exception.ToString(), new Location(filename)).ConfigureAwait(false));
             }
             finally
             {
@@ -618,7 +625,19 @@ namespace SubSonic.Core.VisualStudio.Services
 
         private bool RunFactoryIsAlive()
         {
-            return runFactory?.IsRunFactoryAlive() ?? default;
+            try
+            {
+                return runFactory?.IsRunFactoryAlive() ?? default;
+            }
+            catch (ObjectDisposedException)
+            {
+                runFactory = null;
+            }
+            catch(IOException)
+            {
+                runFactory = null;
+            }
+            return default;
         }
     }
 }
