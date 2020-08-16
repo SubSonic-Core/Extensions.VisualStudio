@@ -337,6 +337,7 @@ namespace SubSonic.Core.VisualStudio.Services
                 else
                 {
                     currentErrors.Clear();
+                    transformationHost.Errors.Clear();
                 }
                 LastInvocationRaisedErrors = false;
                 SubSonicCoreVisualStudioAsyncPackage.Singleton.CancellationTokenSource = new CancellationTokenSource();

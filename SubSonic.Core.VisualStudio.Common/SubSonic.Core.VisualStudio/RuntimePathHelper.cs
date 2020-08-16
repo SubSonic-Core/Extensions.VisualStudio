@@ -81,7 +81,7 @@ namespace SubSonic.Core.VisualStudio.Common
 				return new RuntimeInfo(RuntimeKind.NetCore, string.Empty, "Could not find .NET Core installation");
 			}
 
-			var runtimeDir = FindHighestVersionedDirectory(Path.Combine(dotnetRoot, "shared", "Microsoft.NETCore.App"), d => File.Exists(Path.Combine(d, "System.Runtime.dll")));
+			var runtimeDir = Utilities.FindHighestVersionedDirectory(Path.Combine(dotnetRoot, "shared", "Microsoft.NETCore.App"), d => File.Exists(Path.Combine(d, "System.Runtime.dll")));
 			if (runtimeDir == null)
 			{
 				return new RuntimeInfo(RuntimeKind.NetCore, string.Empty, "Could not find System.Runtime.dll in any .NET shared runtime");
@@ -122,25 +122,6 @@ namespace SubSonic.Core.VisualStudio.Common
 			}
 
 			return null;
-		}
-
-		private static string FindHighestVersionedDirectory(string parentFolder, Func<string, bool> validate)
-		{
-			string bestMatch = null;
-			var bestVersion = SemVersion.Zero;
-			foreach (var dir in Directory.EnumerateDirectories(parentFolder))
-			{
-				var name = Path.GetFileName(dir);
-				if (SemVersion.TryParse(name, out var version) && version.Major >= 0)
-				{
-					if (version > bestVersion && (validate == null || validate(dir)))
-					{
-						bestVersion = version;
-						bestMatch = dir;
-					}
-				}
-			}
-			return bestMatch;
 		}
 	}
 }

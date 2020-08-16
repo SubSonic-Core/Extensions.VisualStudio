@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using NuGet.Configuration;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -306,6 +307,11 @@ namespace SubSonic.Core.VisualStudio.Services
                     }
                 }
 
+                if (TryResolveAssemblyReferenceByNuget(assemblyReference, out string assemblyPath))
+                {
+                    return assemblyPath;
+                }
+
                 if (resolveAssemblyReferenceEventHandler != null)
                 {
                     return resolveAssemblyReferenceEventHandler(this, new ResolveAssemblyReferenceEventArgs(assemblyReference));
@@ -313,6 +319,49 @@ namespace SubSonic.Core.VisualStudio.Services
             }
 
             return assemblyReference;
+        }
+
+        public bool TryResolveAssemblyReferenceByNuget(string assemblyReference, out string assemblyPath)
+        {
+            var settings = Settings.LoadDefaultSettings(null);
+            string 
+                NugetPackageRoot = SettingsUtility.GetGlobalPackagesFolder(settings),
+                FrameworkSegment = null;
+
+            if (Directory.Exists(Path.Combine(NugetPackageRoot, assemblyReference)))
+            {
+                assemblyPath = Utilities.FindHighestVersionedDirectory(Path.Combine(NugetPackageRoot, assemblyReference), path =>
+                {
+                    bool success = false;
+                    string[] framework = new[] { "lib", "netcoreapp3.1" };
+                    decimal netStandardVer = 2.1M;
+
+                    while (true)
+                    {
+                        FrameworkSegment = string.Join("\\", framework);
+                        success = File.Exists(Path.Combine(path, FrameworkSegment, $"{assemblyReference}.dll"));
+
+                        if (!success)
+                        {
+                            framework[1] = $"netstandard{netStandardVer}";
+                            netStandardVer -= 0.1M;
+                            continue;
+                        }
+
+                        break;
+                    }
+
+                    return success;
+                }) ?? assemblyReference;
+
+                assemblyPath = Path.Combine(assemblyPath, FrameworkSegment, $"{assemblyReference}.dll");
+            }
+            else
+            {
+                assemblyPath = assemblyReference;
+            }
+
+            return Path.IsPathRooted(assemblyPath);
         }
 
         private string OnExpandAllVariables(string filePath)
