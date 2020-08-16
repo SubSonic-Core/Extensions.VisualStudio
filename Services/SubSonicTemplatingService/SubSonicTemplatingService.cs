@@ -246,117 +246,117 @@ namespace SubSonic.Core.VisualStudio.Services
                 }                
 
                 // if not found look at the project references
-                if (!foundAssembly.IsMatch(path))
-                {
-                    // not sure if this willl be a problem, I worry about reference only assemblies.
-                    // maybe ensure that the reference is from the nuget package and is a real boy.
-                    // second check the project references
-                    if (Package()?.GetService<DTE>() is DTE dTE)
-                    {
-                        foreach (Project project in dTE.Solution.Projects)
-                        {
-                            if (project.Object is VSProject vsProject)
-                            {
-                                path = ResolveAssemblyReferenceByProject(assemblyReference, vsProject.References, GlobalAssemblyCacheHelper.strongNameRegEx.Match(assemblyReference));
-                            }
-                            else if (project.Object is VsWebSite.VSWebSite vsWebSite)
-                            {
-                                path = ResolveAssemblyReferenceByProject(assemblyReference, vsWebSite.References, GlobalAssemblyCacheHelper.strongNameRegEx.Match(assemblyReference));
-                            }
-                        }
-                    }
-                }
+                //if (!foundAssembly.IsMatch(path))
+                //{
+                //    // not sure if this willl be a problem, I worry about reference only assemblies.
+                //    // maybe ensure that the reference is from the nuget package and is a real boy.
+                //    // second check the project references
+                //    if (Package()?.GetService<DTE>() is DTE dTE)
+                //    {
+                //        foreach (Project project in dTE.Solution.Projects)
+                //        {
+                //            if (project.Object is VSProject vsProject)
+                //            {
+                //                path = ResolveAssemblyReferenceByProject(assemblyReference, vsProject.References, GlobalAssemblyCacheHelper.strongNameRegEx.Match(assemblyReference));
+                //            }
+                //            else if (project.Object is VsWebSite.VSWebSite vsWebSite)
+                //            {
+                //                path = ResolveAssemblyReferenceByProject(assemblyReference, vsWebSite.References, GlobalAssemblyCacheHelper.strongNameRegEx.Match(assemblyReference));
+                //            }
+                //        }
+                //    }
+                //}
             }
 
             return path;
         }
 
-        private string ResolveAssemblyReferenceByProject(string assemblyReference, References references, Match assembly)
-        {
-            foreach (Reference reference in references)
-            {
-                if (!assembly.Success && reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
-                {   // found the reference
-                    if (VerifyAssemblyValidity(reference.Path, out string path))
-                    {
-                        return path;
-                    }
-                    continue;
-                }
-                else if (reference.Name.Equals(assembly.Groups["name"].Value, StringComparison.OrdinalIgnoreCase) &&
-                         Version.Parse(reference.Version) >= Version.Parse(assembly.Groups["version"].Value))
-                {
-                    if (VerifyAssemblyValidity(reference.Path, out string path))
-                    {
-                        return path;
-                    }
-                    continue;
-                }
-            }
+        //private string ResolveAssemblyReferenceByProject(string assemblyReference, References references, Match assembly)
+        //{
+        //    foreach (Reference reference in references)
+        //    {
+        //        if (!assembly.Success && reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
+        //        {   // found the reference
+        //            if (VerifyAssemblyValidity(reference.Path, out string path))
+        //            {
+        //                return path;
+        //            }
+        //            continue;
+        //        }
+        //        else if (reference.Name.Equals(assembly.Groups["name"].Value, StringComparison.OrdinalIgnoreCase) &&
+        //                 Version.Parse(reference.Version) >= Version.Parse(assembly.Groups["version"].Value))
+        //        {
+        //            if (VerifyAssemblyValidity(reference.Path, out string path))
+        //            {
+        //                return path;
+        //            }
+        //            continue;
+        //        }
+        //    }
 
-            return assemblyReference;
-        }
+        //    return assemblyReference;
+        //}
 
-        private string ResolveAssemblyReferenceByProject(string assemblyReference, VsWebSite.AssemblyReferences references, Match assembly)
-        {
-            foreach (VsWebSite.AssemblyReference reference in references)
-            {
-                if (!assembly.Success && reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
-                {   // found the reference
-                    if (VerifyAssemblyValidity(reference.FullPath, out string path))
-                    {
-                        return path;
-                    }
-                    continue;
-                }
-                else if (reference.StrongName.Equals(assembly.Groups["name"].Value, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (VerifyAssemblyValidity(reference.FullPath, out string path))
-                    {
-                        return path;
-                    }
-                    continue;
-                }
-            }
+        //private string ResolveAssemblyReferenceByProject(string assemblyReference, VsWebSite.AssemblyReferences references, Match assembly)
+        //{
+        //    foreach (VsWebSite.AssemblyReference reference in references)
+        //    {
+        //        if (!assembly.Success && reference.Name.Equals(assemblyReference, StringComparison.OrdinalIgnoreCase))
+        //        {   // found the reference
+        //            if (VerifyAssemblyValidity(reference.FullPath, out string path))
+        //            {
+        //                return path;
+        //            }
+        //            continue;
+        //        }
+        //        else if (reference.StrongName.Equals(assembly.Groups["name"].Value, StringComparison.OrdinalIgnoreCase))
+        //        {
+        //            if (VerifyAssemblyValidity(reference.FullPath, out string path))
+        //            {
+        //                return path;
+        //            }
+        //            continue;
+        //        }
+        //    }
 
-            return assemblyReference;
-        }
+        //    return assemblyReference;
+        //}
 
-        private bool VerifyAssemblyValidity(string path, out string assemblyPath)
-        {
-            assemblyPath = path;
+        //private bool VerifyAssemblyValidity(string path, out string assemblyPath)
+        //{
+        //    assemblyPath = path;
 
-            if (assemblyPath.Contains("\\ref\\"))
-            {   // strong possibility that this is a reference assembly
-                // banking on path structure being logical and in line with package build guidelines.
+        //    if (assemblyPath.Contains("\\ref\\"))
+        //    {   // strong possibility that this is a reference assembly
+        //        // banking on path structure being logical and in line with package build guidelines.
                 
-                int index = assemblyPath.IndexOf("\\ref\\");
-                string[] _path = new[]
-                {
-                    assemblyPath.Substring(0, index),
-                    assemblyPath.Substring(index + "\\ref\\".Length)
-                };
+        //        int index = assemblyPath.IndexOf("\\ref\\");
+        //        string[] _path = new[]
+        //        {
+        //            assemblyPath.Substring(0, index),
+        //            assemblyPath.Substring(index + "\\ref\\".Length)
+        //        };
 
-                if (Directory.Exists(Path.Combine(_path[0],"runtimes")))
-                {  
-                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                    {
-                        assemblyPath = Path.Combine(_path[0], "runtimes\\win\\lib", _path[1]);
-                    }
-                    else if (Environment.OSVersion.Platform == PlatformID.Unix)
-                    {
-                        assemblyPath = Path.Combine(_path[0], "runtimes\\unix\\lib", _path[1]);
-                    }
-                }
-                else
-                {
-                    assemblyPath = assemblyPath.Replace("\\ref\\", "\\lib\\");
-                }                
+        //        if (Directory.Exists(Path.Combine(_path[0],"runtimes")))
+        //        {  
+        //            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+        //            {
+        //                assemblyPath = Path.Combine(_path[0], "runtimes\\win\\lib", _path[1]);
+        //            }
+        //            else if (Environment.OSVersion.Platform == PlatformID.Unix)
+        //            {
+        //                assemblyPath = Path.Combine(_path[0], "runtimes\\unix\\lib", _path[1]);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            assemblyPath = assemblyPath.Replace("\\ref\\", "\\lib\\");
+        //        }                
 
-                return File.Exists(assemblyPath);
-            }
-            return true;
-        }
+        //        return File.Exists(assemblyPath);
+        //    }
+        //    return true;
+        //}
 
         private string GetVSInstallDir(RegistryKey applicationRoot)
         {

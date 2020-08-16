@@ -10,19 +10,26 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TemplateIntegrationTest.DAL.Models
 {
-	<#foreach(Models.Table table in Context.Tables) {#>
+	<#foreach(Models.Table table in Context.Tables) 
+	{
+	#>
+	[Table("<#=table.Name#>", Schema = "<#=table.Schema#>")]
 	public partial class <#=table.Name#>
 	{
 		public <#=table.Name#>() { }
 
-		<#foreach (Models.Column column in table.Columns.OrderBy(x => x.OrdinalPosition)) {#>
-		<#if (column.IsPrimaryKey == true) {#>
-		[Key]
-		<#}#>
-		public virtual <#=column.GetClrType().Name#> <#=column.ColumnName#> { get; set; }
+		<#foreach (Models.Column col in table.Columns.OrderBy(x => x.OrdinalPosition)) {#>
+			<#if (col.IsPrimaryKey) {#>
+			[Key]
+			<#}#>
+			<#if (col.IsComputed) {#>
+			[DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+			<#} else if (col.IsIdentity) {#>
+			[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+			<#}#>
+			public <#=((col.IsIdentity || col.IsComputed) ? "" : "virtual")#> <#=col.ToSimpleType()#> <#=col.ColumnName#> { get; set; }
 		<#}#>
 	}
-	<#} 
-	
-	WriteLine();#>
+
+	<#}#>
 }
