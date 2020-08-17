@@ -32,8 +32,6 @@ namespace SubSonic.Core.VisualStudio.Services
         private readonly Dictionary<RuntimeKind, List<string>> referencePaths;
         private readonly Dictionary<string, string> parameters;
         private readonly Dictionary<string, KeyValuePair<string, string>> directiveProcessors;
-        
-        private readonly TemplateErrorCollection errors;
 
         [NonSerialized]
         private GetHostOptionEventHandler getHostOptionEventHandler;
@@ -117,7 +115,6 @@ namespace SubSonic.Core.VisualStudio.Services
             includePaths = new List<string>();
             referencePaths = new Dictionary<RuntimeKind, List<string>>();
             directiveProcessors = new Dictionary<string, KeyValuePair<string, string>>();
-            errors = new TemplateErrorCollection();
         }
 
         public Dictionary<RuntimeKind, List<string>> ReferencePaths => referencePaths;
@@ -182,9 +179,10 @@ namespace SubSonic.Core.VisualStudio.Services
 
         public override ITextTemplatingSession CreateSession()
         {
-            ITextTemplatingSession session = new TextTemplatingSession();
-
-            session[nameof(TemplateFile)] = TemplateFile;
+            ITextTemplatingSession session = new TextTemplatingSession
+            {
+                [nameof(TemplateFile)] = TemplateFile
+            };
 
             return session;
         }

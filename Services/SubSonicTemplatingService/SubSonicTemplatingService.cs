@@ -82,14 +82,18 @@ namespace SubSonic.Core.VisualStudio.Services
 
         private string TransformationHost_ExpandAllVariablesEventHandler(object sender, Host.ExpandAllVariablesEventArgs args)
         {
+#pragma warning disable VSTHRD102 // Implement internal logic asynchronously
             return VsShell.ThreadHelper.JoinableTaskFactory.Run(async () =>
+#pragma warning restore VSTHRD102 // Implement internal logic asynchronously
                await ExpandAllVariablesAsync(args.FilePath)
            );
         }
 
         private string TransformationHost_ResolveAssemblyReferenceEventHandler(object sender, Host.ResolveAssemblyReferenceEventArgs args)
         {
+#pragma warning disable VSTHRD102 // Implement internal logic asynchronously
             return VsShell.ThreadHelper.JoinableTaskFactory.Run(async () =>
+#pragma warning restore VSTHRD102 // Implement internal logic asynchronously
                 await ResolveAssemblyReferenceAsync(args.AssemblyReference)
             );
         }

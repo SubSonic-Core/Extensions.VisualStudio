@@ -559,7 +559,9 @@ namespace SubSonic.Core.VisualStudio.Services
 
                     foreach (var templateError in result.Errors)
                     {
-                        ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LogErrorAsync(templateError.Message, templateError.Location, templateError.IsWarning));
+#pragma warning disable VSTHRD010
+                        ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LogErrorAsync(templateError.Message, templateError.Location, templateError.IsWarning).ConfigureAwait(false));
+#pragma warning restore VSTHRD010
                     }
 
                     processOutput = result.TemplateOutput;
