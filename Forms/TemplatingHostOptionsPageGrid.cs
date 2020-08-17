@@ -10,7 +10,7 @@ using Package = SubSonic.Core.VisualStudio.SubSonicCoreVisualStudioAsyncPackage;
 
 namespace SubSonic.Core.VisualStudio.Forms
 {
-    [ProvideProfile(typeof(SecurityOptionPageGrid), Package.SubSonicCoreCategory, HostOptionsPageName, 100, 101, true)]
+    [ProvideProfile(typeof(TemplatingHostOptionsPageGrid), Package.SubSonicCoreCategory, HostOptionsPageName, 100, 101, true)]
     public class TemplatingHostOptionsPageGrid
         : DialogPage
     {
@@ -38,16 +38,14 @@ namespace SubSonic.Core.VisualStudio.Forms
             set => compilerOptions = value;
         }
 
-        private RuntimeKind runtimeKind = RuntimeKind.Default;
-
         [Category(Package.SubSonicCoreCategory)]
         [DisplayName("Roslyn Runtime")]
         [Description("Indicates which Roslyn runtime to use.")]
-        public RuntimeKind RuntimeKind
-        {
-            get => runtimeKind;
-            set => runtimeKind = value;
-        }
+        public RuntimeKind RuntimeKind { get; } = RuntimeKind.NetCore;
+        //{
+        //    get => runtimeKind;
+        //    set => runtimeKind = value;
+        //}
 
         private bool linePragmas = true;
 
@@ -69,6 +67,6 @@ namespace SubSonic.Core.VisualStudio.Forms
         {
             get => relativeLinePragmas;
             set => relativeLinePragmas = value;
-        }
+        } 
     }
 }

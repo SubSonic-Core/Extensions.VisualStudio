@@ -16,6 +16,7 @@ namespace SubSonic.Core.VisualStudio.Testing.SubSonic.Core.VisualStudio.Common
     {
         [Test]
         [TestCase("SubSonic.Core.Abstractions", true, @"C:\Users\kccar\.nuget\packages\subsonic.core.abstractions\4.2.2\lib\netstandard2.1")]
+        [TestCase("SubSonic.Core.DAL", true, @"C:\Users\kccar\.nuget\packages\subsonic.core.dal\4.3.0-alpha.6\lib\netstandard2.1")]
         [TestCase("SubSonic.Core.NotGonnaFindIt", false, @"SubSonic.Core.NotGonnaFindIt")]
         public void CanResolveAssemblyReferenceByNuget(string assemblyReference, bool isPathRooted, string expectedPath)
         {

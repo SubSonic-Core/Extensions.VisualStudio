@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using NuGet.Configuration;
+using System.Text.RegularExpressions;
 
 namespace SubSonic.Core.VisualStudio.Services
 {
@@ -334,14 +335,14 @@ namespace SubSonic.Core.VisualStudio.Services
                 {
                     bool success = false;
                     string[] framework = new[] { "lib", "netcoreapp3.1" };
-                    decimal netStandardVer = 2.1M;
+                    decimal netStandardVer = GetNetStandardVersion(framework[1]);
 
                     while (true)
                     {
                         FrameworkSegment = string.Join("\\", framework);
                         success = File.Exists(Path.Combine(path, FrameworkSegment, $"{assemblyReference}.dll"));
 
-                        if (!success)
+                        if (!success && netStandardVer >= 1.0M)
                         {
                             framework[1] = $"netstandard{netStandardVer}";
                             netStandardVer -= 0.1M;
@@ -362,6 +363,24 @@ namespace SubSonic.Core.VisualStudio.Services
             }
 
             return Path.IsPathRooted(assemblyPath);
+        }
+
+        private decimal GetNetStandardVersion(string framework)
+        {
+            Regex netcoreapp = new Regex("(?<framework>[a-z]*)(?<major>[0-9]*).(?<minor>[0-9]*)");
+
+            var match = netcoreapp.Match(framework);
+
+            if (match.Groups["framework"].Value == "netcoreapp")
+            {
+                int.TryParse(match.Groups["major"].Value, out int major);
+
+                if (major >= 3)
+                {
+                    return 2.1M;
+                }
+            }
+            return 2.0M;
         }
 
         private string OnExpandAllVariables(string filePath)
@@ -438,11 +457,8 @@ namespace SubSonic.Core.VisualStudio.Services
                 throw new Exception(string.Format("Could not resolve assembly '{0}' for directive processor '{1}'", value.Value, processorName));
             }
 
-#if NETSTANDARD || NETCOREAPP
-            var assembly = RemoteTransformationRunFactory.Context.LoadFromAssemblyPath(assemblyPath);
-#else
             var assembly = Assembly.LoadFrom(assemblyPath);
-#endif
+
             return assembly.GetType(value.Key, true);
         }
 

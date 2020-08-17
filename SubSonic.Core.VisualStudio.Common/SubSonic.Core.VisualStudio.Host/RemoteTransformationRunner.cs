@@ -17,19 +17,27 @@ namespace SubSonic.Core.VisualStudio.Host
         public RemoteTransformationRunner(TransformationRunFactory factory, Guid id)
             : base(factory, id)
         {
-            RemoteTransformationRunFactory.Context.Resolving += ResolveReferencedAssemblies;
+            if (Factory is RemoteTransformationRunFactory remote)
+            {
+                remote.Context(RunnerId).Resolving += ResolveReferencedAssemblies;
+            }
         }
 
         public override Assembly LoadFromAssemblyName(AssemblyName assemblyName)
         {
-            return RemoteTransformationRunFactory.Context.LoadFromAssemblyName(assemblyName);
+            if (Factory is RemoteTransformationRunFactory remote)
+            {
+                return remote.Context(RunnerId).LoadFromAssemblyName(assemblyName);
+            }
+            return default;
         }
 
         protected override void Unload()
         {
-#if NETCOREAPP
-            RemoteTransformationRunFactory.Context.Unload();
-#endif
+            if (Factory is RemoteTransformationRunFactory remote)
+            {
+                remote.UnloadContext(RunnerId);
+            }
         }
 #else
         public RemoteTransformationRunner(TransformationRunFactory factory, Guid id)
@@ -42,14 +50,15 @@ namespace SubSonic.Core.VisualStudio.Host
 
             if (!disposed)
             {
-                if (disposing)
-                {
 #if NETSTANDARD || NETCOREAPP
-                    Unload();
+                if (Factory is RemoteTransformationRunFactory remote)
+                {
+                    remote.Context(RunnerId).Resolving -= ResolveReferencedAssemblies;
                 }
 
-                RemoteTransformationRunFactory.Context.Resolving -= ResolveReferencedAssemblies;
-#else
+                if (disposing)
+                {                    
+                    Unload();
                 }
 #endif
                 disposed = true;

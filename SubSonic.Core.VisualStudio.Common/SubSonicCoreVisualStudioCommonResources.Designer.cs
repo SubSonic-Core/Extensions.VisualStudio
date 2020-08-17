@@ -70,6 +70,15 @@ namespace SubSonic.Core.VisualStudio.Common {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to disposed runner [{0}].
+        /// </summary>
+        internal static string DisposedTransformationRunner {
+            get {
+                return ResourceManager.GetString("DisposedTransformationRunner", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Method is not meant to be executed server side..
         /// </summary>
         internal static string MethodIsStubbedOutForProxyImpersonation {

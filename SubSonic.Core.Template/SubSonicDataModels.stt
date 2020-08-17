@@ -3,33 +3,35 @@
 <#
 	Settings.Host = Host;
 	Context = new SqlGeneratorContext(Settings.Connection);
-#>
-using System;
+#>using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TemplateIntegrationTest.DAL.Models
 {
-	<#foreach(Models.Table table in Context.Tables) 
-	{
-	#>
-	[Table("<#=table.Name#>", Schema = "<#=table.Schema#>")]
-	public partial class <#=table.Name#>
-	{
-		public <#=table.Name#>() { }
+<#foreach(Models.Table table in Context.Tables) {#>
+    [Table("<#=table.Name#>", Schema = "<#=table.Schema#>")]
+    public partial class <#=table.Name#>
+    {
+        public <#=table.Name#>() { }
 
-		<#foreach (Models.Column col in table.Columns.OrderBy(x => x.OrdinalPosition)) {#>
-			<#if (col.IsPrimaryKey) {#>
-			[Key]
-			<#}#>
-			<#if (col.IsComputed) {#>
-			[DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-			<#} else if (col.IsIdentity) {#>
-			[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-			<#}#>
-			public <#=((col.IsIdentity || col.IsComputed) ? "" : "virtual")#> <#=col.ToSimpleType()#> <#=col.ColumnName#> { get; set; }
-		<#}#>
-	}
+<#foreach (Models.Column col in table.Columns.OrderBy(x => x.OrdinalPosition)) {#>
+<#if (col.IsPrimaryKey) {#>
+        [Key]
+<#}#>
+<#if (col.IsComputed) {#>
+        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+<#} else if (col.IsIdentity) {#>
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+<#}#>
+        public <#=((col.IsIdentity || col.IsComputed) ? "" : "virtual ")#><#=col.ToSimpleType()#> <#=col.ColumnName#> { get; set; }
+<#}#>
+<#foreach (Models.Relationship relation in table.Relationships) {#>
+        [ForeignKey(nameof(<#=relation.ColumnName#>))]
+        public virtual <#=relation.ForiegnTableName#> <#=relation.ForiegnTableName#> { get; set; }
 
-	<#}#>
+<#}#>
+    }
+
+<#}#>
 }

@@ -56,17 +56,17 @@ namespace SubSonic.Core.VisualStudio.Templating
 
         public override void Write(string value)
         {
-            _ = WriteAsync(value);
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () => await WriteAsync(value));
         }
 
         public override void WriteLine()
         {
-            _ = WriteLineAsync();
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () => await WriteLineAsync());
         }
 
         public override void WriteLine(string value)
         {
-            _ = WriteLineAsync(value);
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () => await WriteLineAsync(value));
         }
 
         public override async Task WriteAsync(string value)

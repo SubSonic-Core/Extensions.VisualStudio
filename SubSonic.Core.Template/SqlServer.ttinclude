@@ -37,13 +37,4 @@ public class SqlGeneratorContext
 }
 
 protected SqlGeneratorContext Context { get; private set; } 
-
-protected override void Dispose(bool disposing)
-{
-	if (disposing)
-	{
-		Context?.Dispose();
-		Context = null;
-	}
-}
 #>

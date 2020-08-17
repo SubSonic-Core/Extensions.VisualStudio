@@ -119,10 +119,10 @@ namespace SubSonic.Core.VisualStudio.Services
                 {
                     return Package().HostOptions.UseRelativeLinePragmas;
                 }
-                else if (args.OptionName.Equals(nameof(TemplateSettings.Log), StringComparison.OrdinalIgnoreCase))
-                {   // supply the engine with a textwriter that can output to the output pane.
-                    return subSonicOutput.GetOutputTextWriter();
-                }
+                //else if (args.OptionName.Equals(nameof(TemplateSettings.Log), StringComparison.OrdinalIgnoreCase))
+                //{   // supply the engine with a textwriter that can output to the output pane.
+                //    return subSonicOutput.GetOutputTextWriter();
+                //}
                 else if (args.OptionName.Equals(nameof(TemplateSettings.RuntimeKind), StringComparison.OrdinalIgnoreCase))
                 {
                     return Package().HostOptions.RuntimeKind;

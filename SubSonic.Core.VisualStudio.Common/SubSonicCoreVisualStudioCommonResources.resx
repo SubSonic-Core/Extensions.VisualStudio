@@ -120,6 +120,9 @@
   <data name="CreatedTransformationRunner" xml:space="preserve">
     <value>created runner: [{0}]{1}</value>
   </data>
+  <data name="DisposedTransformationRunner" xml:space="preserve">
+    <value>disposed runner [{0}]</value>
+  </data>
   <data name="MethodIsStubbedOutForProxyImpersonation" xml:space="preserve">
     <value>Method is not meant to be executed server side.</value>
   </data>

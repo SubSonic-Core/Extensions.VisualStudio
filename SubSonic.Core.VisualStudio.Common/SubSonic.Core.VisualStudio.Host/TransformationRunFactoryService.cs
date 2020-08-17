@@ -42,21 +42,49 @@ namespace SubSonic.Core.VisualStudio.Host
 
         public IProcessTransformationRunner CreateTransformationRunner()
         {
-            IProcessTransformationRunner runner = runFactory.CreateTransformationRunner();
+            try
+            {
+                IProcessTransformationRunner runner = runFactory.CreateTransformationRunner();
 
-            Console.Out.WriteLine(SubSonicCoreVisualStudioCommonResources.CreatedTransformationRunner.Format(runner.RunnerId, runner.GetType().FullName));
+                Console.Out.WriteLine(SubSonicCoreVisualStudioCommonResources.CreatedTransformationRunner.Format(runner.RunnerId, runner.GetType().FullName));
 
-            return runner;
+                return runner;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.ToString());
+            }
+            return default;
         }
 
         public bool DisposeOfRunner(Guid runnerId)
         {
-            return runFactory.DisposeOfRunner(runnerId);
+            try
+            {
+                bool result = runFactory.DisposeOfRunner(runnerId);
+
+                Console.Out.WriteLine(SubSonicCoreVisualStudioCommonResources.DisposedTransformationRunner.Format(runnerId));
+
+                return result;
+            }
+            catch(Exception ex)
+            {
+                Console.Error.WriteLine(ex.ToString());
+            }
+            return default;
         }
 
         public bool PrepareTransformation(Guid runnerId, ParsedTemplate pt, string content, ITextTemplatingEngineHost host, TemplateSettings settings)
         {
-            return runFactory.PrepareTransformation(runnerId, pt, content, host, settings);
+            try
+            {
+                return runFactory.PrepareTransformation(runnerId, pt, content, host, settings);
+            }
+            catch(Exception ex)
+            {
+                Console.Error.WriteLine(ex.ToString());
+            }
+            return default;
         }
 
         public ITextTemplatingCallback StartTransformation(Guid runnerId)
@@ -71,6 +99,10 @@ namespace SubSonic.Core.VisualStudio.Host
                     {
                         Console.Error.WriteLine($"{error.Location}({error.Location.Line},{error.Location.Column}){((error.ErrorNumber?.Length ?? 0) > 0 ? $": {error.ErrorNumber}" : "")} {(error.IsWarning ? "warning" : "error")}: {error.Message}");
                     }
+                }
+                else
+                {
+                    Console.Out.WriteLine(result.TemplateOutput);
                 }
 
                 return result;
