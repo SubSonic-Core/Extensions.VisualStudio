@@ -19,6 +19,7 @@ namespace SubSonic.Core.VisualStudio.Services
     [Serializable]
     public class RemoteTransformationHost
         : ProcessEngineHost
+        , IServiceProvider
     {
         private static readonly Dictionary<string, string> KnownAssemblyNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -488,6 +489,19 @@ namespace SubSonic.Core.VisualStudio.Services
                 return ResolveParameterValue(null, null, parameterName);
             }
             return null;
+        }
+
+        public object GetService(Type serviceType)
+        {
+            if (serviceType.IsAssignableFrom(GetType()))
+            {
+                return this;
+            }
+            else if (Session.ContainsKey(serviceType.Name))
+            {
+                return Session[serviceType.Name];
+            }
+            return default;
         }
     }
 }
