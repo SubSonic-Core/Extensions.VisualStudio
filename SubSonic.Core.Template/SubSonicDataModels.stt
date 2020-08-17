@@ -1,5 +1,6 @@
 ﻿<#@ template hostspecific="true" language="C#" #>
 <#@ include file="SqlServer.ttinclude" #>
+<#@ import namespace="System.Linq" #>
 <#
 	Settings.Host = Host;
 	Context = new SqlGeneratorContext(Settings.Connection);
@@ -9,7 +10,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TemplateIntegrationTest.DAL.Models
 {
-<#foreach(Models.Table table in Context.Tables) {#>
+<#foreach(Models.Table table in Context.Tables) {
+    if (Settings.ExcludeTables.Any(x => x.Equals(table.Name, StringComparison.OrdinalIgnoreCase)))
+    {
+        continue;
+    }
+#>
     [Table("<#=table.Name#>", Schema = "<#=table.Schema#>")]
     public partial class <#=table.Name#>
     {
@@ -26,9 +32,23 @@ namespace TemplateIntegrationTest.DAL.Models
 <#}#>
         public <#=((col.IsIdentity || col.IsComputed) ? "" : "virtual ")#><#=col.ToSimpleType()#> <#=col.ColumnName#> { get; set; }
 <#}#>
-<#foreach (Models.Relationship relation in table.Relationships) {#>
+<#foreach (Models.Relationship relation in table.WithOneRelationships) {
+    if (Settings.ExcludeRelationships.Any(x => x.Equals(table.Name, StringComparison.OrdinalIgnoreCase)))
+    {
+        continue;
+    }
+#>
         [ForeignKey(nameof(<#=relation.ColumnName#>))]
         public virtual <#=relation.ForiegnTableName#> <#=relation.ForiegnTableName#> { get; set; }
+
+<#}#>
+<#foreach (Models.Relationship relation in table.WithManyRelationships) {
+    if (Settings.ExcludeRelationships.Any(x => x.Equals(table.Name, StringComparison.OrdinalIgnoreCase)))
+    {
+        continue;
+    }
+#>
+        public virtual ISubSonicCollection<<#=relation.TableName#>> <#=relation.TableName.Pluralize()#> { get; set; }
 
 <#}#>
     }

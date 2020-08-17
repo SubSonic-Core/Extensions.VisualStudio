@@ -22,10 +22,8 @@ namespace SubSonic.Core.VisualStudio.Services
     {
         private static readonly Dictionary<string, string> KnownAssemblyNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "System", Path.GetFileName(typeof(System.Uri).Assembly.Location) },
-            { "System.Core", Path.GetFileName(typeof(System.Linq.Enumerable).Assembly.Location) },
+            { "System", Path.GetFileName(typeof(String).Assembly.Location) },
             { "System.Data", Path.GetFileName(typeof(System.Data.DataTable).Assembly.Location) },
-            { "System.Linq", Path.GetFileName(typeof(System.Linq.Enumerable).Assembly.Location) },
             { "System.Xml", Path.GetFileName(typeof(System.Xml.XmlAttribute).Assembly.Location) }
         };
 

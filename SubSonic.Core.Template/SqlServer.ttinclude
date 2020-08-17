@@ -6,8 +6,6 @@
 <#@ assembly name="Microsoft.Extensions.Options" #>
 <#@ assembly name="Microsoft.Extensions.Primitives" #>
 <#@ assembly name="SubSonic.Extensions.SqlServer" #>
-<#@ assembly name="System.Linq.Expressions" #>
-<#@ assembly name="System.Linq.Queryable" #>
 
 <#@ import namespace="Microsoft.Extensions.Logging" #>
 <#@ import namespace="SubSonic.Extensions.SqlServer" #>

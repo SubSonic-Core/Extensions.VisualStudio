@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.7" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.153.0" />
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0170-g6d4afad9f9" />
+    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0171-g166965ae2b" />
     <PackageReference Include="NuGet.Configuration" Version="5.7.0" />
     <PackageReference Include="SubSonic.Core.Extensions" Version="1.1.0" />
     <PackageReference Include="SubSonic.Core.Remoting" Version="1.0.0-preview-0051-g6c481c84e7" />

@@ -20,7 +20,12 @@ namespace TemplateIntegrationTest.DAL
 			this.services = services ?? throw new ArgumentNullException(nameof(services));
 		}
 
-<#foreach(Models.Table table in Context.Tables) {#>
+<#foreach(Models.Table table in Context.Tables) {
+    if (Settings.ExcludeTables.Any(x => x.Equals(table.Name, StringComparison.OrdinalIgnoreCase)))
+    {
+        continue;
+    }
+#>
 		public ISubSonicSetCollection<Models.<#=table.Name#>> <#=table.Name.Pluralize()#> { get; protected set; }
 <#}#>
 	}

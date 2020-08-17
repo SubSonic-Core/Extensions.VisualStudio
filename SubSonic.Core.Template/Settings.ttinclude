@@ -1,7 +1,11 @@
-﻿<#@ assembly name="SubSonic.Core.Abstractions" #>
+﻿<#@ parameter type="System.String" name="$connectionKey$" #>
+<#@ assembly name="SubSonic.Core.Abstractions" #>
 <#@ assembly name="SubSonic.Core.DAL" #>
 <#@ assembly name="SubSonic.Core.Extensions" #>
-<#@ parameter type="System.String" name="$connectionKey$" #>
+<#@ assembly name="System.Linq.Expressions" #>
+<#@ assembly name="System.Linq.Queryable" #>
+<#@ assembly name="System.Linq" #>
+
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.Data" #>
 <#@ import namespace="System.Data.Common" #>
@@ -12,13 +16,22 @@ public class Settings
 {
 	public static ITextTemplatingEngineHost Host { get; set; }
 
-	public string[] ExcludeTables
+	public static IEnumerable<string> ExcludeRelationships
+	{
+		get
+		{
+			return new string[] { };
+		}
+	}
+
+	public static IEnumerable<string> ExcludeTables
 	{
 		get
 		{ 
 			return new string[]{
 				"sysdiagrams",
 				"BuildVersion",
+				"__RefactorLog",
 				"aspnet_Applications",
 				"aspnet_Membership",
 				"aspnet_Paths",
