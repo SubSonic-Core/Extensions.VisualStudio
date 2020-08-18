@@ -2,7 +2,8 @@
 <#@ include file="SqlServer.ttinclude" #>
 <#
 	Settings.Host = Host;
-	Context = new SqlGeneratorContext(Settings.Connection);
+	using(Context = new SqlGeneratorContext(Settings.Connection))
+    {
 #>
 using Microsoft.Extensions.DependencyInjection;
 using SubSonic;
@@ -28,5 +29,21 @@ namespace TemplateIntegrationTest.DAL
 #>
 		public ISubSonicSetCollection<Models.<#=table.Name#>> <#=table.Name.Pluralize()#> { get; protected set; }
 <#}#>
+		protected override void OnDbModeling(DbModelBuilder builder)
+        {
+            if (builder == null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
+<#foreach(Models.Table table in Context.Tables) {
+    if (Settings.ExcludeTables.Any(x => x.Equals(table.Name, StringComparison.OrdinalIgnoreCase)))
+    {
+        continue;
+    }
+#>
+            builder.AddEntityModel<Models.<#=table.Name#>>();
+<#}#>
+        }
 	}
 }
+<#}#>

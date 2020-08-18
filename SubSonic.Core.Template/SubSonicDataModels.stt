@@ -3,10 +3,12 @@
 <#@ import namespace="System.Linq" #>
 <#
 	Settings.Host = Host;
-	Context = new SqlGeneratorContext(Settings.Connection);
+	using (Context = new SqlGeneratorContext(Settings.Connection))
+    {
 #>using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using SubSonic;
 
 namespace TemplateIntegrationTest.DAL.Models
 {
@@ -17,6 +19,11 @@ namespace TemplateIntegrationTest.DAL.Models
     }
 #>
     [Table("<#=table.Name#>", Schema = "<#=table.Schema#>")]
+<#if (Context.TableTypes.Any(x => x.SchemaOwner == table.Schema && x.Name == table.Name)) {
+    Models.TableType tableType = Context.TableTypes.Single(x => x.SchemaOwner == table.Schema && x.Name == table.Name);
+#>
+    [DbUserDefinedTableType("<#=tableType.Name#>", SchemaName = "<#=tableType.SchemaOwner#>")]    
+<#}#>
     public partial class <#=table.Name#>
     {
         public <#=table.Name#>() { }
@@ -55,3 +62,4 @@ namespace TemplateIntegrationTest.DAL.Models
 
 <#}#>
 }
+<#}#>
