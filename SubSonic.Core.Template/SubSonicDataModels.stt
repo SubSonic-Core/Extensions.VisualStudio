@@ -10,7 +10,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using SubSonic;
 
-namespace TemplateIntegrationTest.DAL.Models
+namespace $rootnamespace$.Models
 {
 <#foreach(Models.Table table in Context.Tables) {
     if (Settings.ExcludeTables.Any(x => x.Equals(table.Name, StringComparison.OrdinalIgnoreCase)))
