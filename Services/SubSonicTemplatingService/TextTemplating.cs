@@ -505,9 +505,7 @@ namespace SubSonic.Core.VisualStudio.Services
                     throw new FileNotFoundException(SubSonicCoreErrors.FileNotFound, SubSonicMenuCommands.SubSonicHostProcessFileName);
                 }
 
-                Guid guid = Guid.NewGuid();
-
-                ProcessStartInfo psi = new ProcessStartInfo(path, guid.ToString())
+                ProcessStartInfo psi = new ProcessStartInfo(path, SubSonicCoreVisualStudioCommonResources.HostArgumentString.Format(TransformationRunFactory.TransformationRunFactoryService, Package().HostOptions.Timeout))
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false,

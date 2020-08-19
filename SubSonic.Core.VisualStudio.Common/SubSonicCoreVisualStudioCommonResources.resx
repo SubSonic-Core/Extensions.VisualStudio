@@ -123,6 +123,9 @@
   <data name="DisposedTransformationRunner" xml:space="preserve">
     <value>disposed runner [{0}]</value>
   </data>
+  <data name="HostArgumentString" xml:space="preserve">
+    <value>pipename:{0} timeout:{1}</value>
+  </data>
   <data name="MethodIsStubbedOutForProxyImpersonation" xml:space="preserve">
     <value>Method is not meant to be executed server side.</value>
   </data>

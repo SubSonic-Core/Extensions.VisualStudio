@@ -18,11 +18,21 @@ namespace SubSonic.Core.VisualStudio.Host
 
         [NonSerialized]
         private readonly IProcessTransformationRunFactory runFactory;
+        private DateTime lastUsed;
+        private readonly int timeout;
 
-        public TransformationRunFactoryService(Uri serviceUri)
+        public TransformationRunFactoryService(Uri serviceUri, int timeout)
             : base(serviceUri)
         {
+            this.timeout = timeout;
+            lastUsed = DateTime.Now;
             runFactory = new RemoteTransformationRunFactory(Guid.NewGuid());
+        }
+
+        public override bool IsRunning
+        {
+            get => (base.IsRunning && (lastUsed.AddSeconds(timeout) > DateTime.Now));
+            protected set => base.IsRunning = value;
         }
 
         public Guid GetFactoryId()
@@ -44,6 +54,8 @@ namespace SubSonic.Core.VisualStudio.Host
         {
             try
             {
+                lastUsed = DateTime.Now;
+
                 IProcessTransformationRunner runner = runFactory.CreateTransformationRunner();
 
                 Console.Out.WriteLine(SubSonicCoreVisualStudioCommonResources.CreatedTransformationRunner.Format(runner.RunnerId, runner.GetType().FullName));
@@ -78,6 +90,8 @@ namespace SubSonic.Core.VisualStudio.Host
         {
             try
             {
+                lastUsed = DateTime.Now;
+
                 return runFactory.PrepareTransformation(runnerId, pt, content, host, settings);
             }
             catch(Exception ex)
@@ -91,6 +105,8 @@ namespace SubSonic.Core.VisualStudio.Host
         {
             try
             {
+                lastUsed = DateTime.Now;
+
                 ITextTemplatingCallback result = runFactory.StartTransformation(runnerId);
 
                 if (result.Errors.HasErrors)
@@ -116,6 +132,8 @@ namespace SubSonic.Core.VisualStudio.Host
 
         public TemplateErrorCollection GetErrors(Guid runnerId)
         {
+            lastUsed = DateTime.Now;
+
             return runFactory.GetErrors(runnerId);
         }
 

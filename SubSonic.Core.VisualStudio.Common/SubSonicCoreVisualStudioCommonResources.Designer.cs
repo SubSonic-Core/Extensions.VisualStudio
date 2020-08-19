@@ -22,7 +22,7 @@ namespace SubSonic.Core.VisualStudio.Common {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class SubSonicCoreVisualStudioCommonResources {
+    public class SubSonicCoreVisualStudioCommonResources {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -36,7 +36,7 @@ namespace SubSonic.Core.VisualStudio.Common {
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
+        public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SubSonic.Core.VisualStudio.Common.SubSonicCoreVisualStudioCommonResources", typeof(SubSonicCoreVisualStudioCommonResources).Assembly);
@@ -51,7 +51,7 @@ namespace SubSonic.Core.VisualStudio.Common {
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
+        public static global::System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -63,7 +63,7 @@ namespace SubSonic.Core.VisualStudio.Common {
         /// <summary>
         ///   Looks up a localized string similar to created runner: [{0}]{1}.
         /// </summary>
-        internal static string CreatedTransformationRunner {
+        public static string CreatedTransformationRunner {
             get {
                 return ResourceManager.GetString("CreatedTransformationRunner", resourceCulture);
             }
@@ -72,16 +72,25 @@ namespace SubSonic.Core.VisualStudio.Common {
         /// <summary>
         ///   Looks up a localized string similar to disposed runner [{0}].
         /// </summary>
-        internal static string DisposedTransformationRunner {
+        public static string DisposedTransformationRunner {
             get {
                 return ResourceManager.GetString("DisposedTransformationRunner", resourceCulture);
             }
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to pipename:{0} timeout:{1}.
+        /// </summary>
+        public static string HostArgumentString {
+            get {
+                return ResourceManager.GetString("HostArgumentString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Method is not meant to be executed server side..
         /// </summary>
-        internal static string MethodIsStubbedOutForProxyImpersonation {
+        public static string MethodIsStubbedOutForProxyImpersonation {
             get {
                 return ResourceManager.GetString("MethodIsStubbedOutForProxyImpersonation", resourceCulture);
             }

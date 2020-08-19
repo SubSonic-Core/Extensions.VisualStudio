@@ -17,10 +17,24 @@ namespace SubSonic.Core.VisualStudio.HostProcess
             var logger = new Logger(logLevel: LogLevel.Debug);
             var stats = new Stats();
 
-            var pipename = TransformationRunFactory.TransformationRunFactoryService;
+            string pipename = TransformationRunFactory.TransformationRunFactoryService;
+            int timeout = 60;
+
+            foreach(string arg in args)
+            {
+                if (arg.StartsWith(nameof(pipename), StringComparison.OrdinalIgnoreCase))
+                {
+                    pipename = arg.Split(':')[1];
+                }
+                else if (arg.StartsWith(nameof(timeout), StringComparison.OrdinalIgnoreCase) &&
+                         int.TryParse(arg.Split(':')[1], out int _timeout))
+                {
+                    timeout = _timeout;
+                }
+            }
 
 #pragma warning disable IDE0063 // Use simple 'using' statement
-            using (TransformationRunFactoryService service = new TransformationRunFactoryService(new Uri($"ipc://{TransformationRunFactory.TransformationRunFactoryService}")))
+            using (TransformationRunFactoryService service = new TransformationRunFactoryService(new Uri($"ipc://{pipename}"), timeout))
 #pragma warning restore IDE0063 // Use simple 'using' statement
             using (NpHost host = new NpHost(pipename, logger, stats))
             {
@@ -28,10 +42,14 @@ namespace SubSonic.Core.VisualStudio.HostProcess
 
                 host.Open();
 
+                Console.Out.WriteLine($"Startup: {DateTime.Now}");
+
                 while(service.IsRunning)
                 {
                     Thread.Sleep(10);
                 }
+
+                Console.Out.WriteLine($"Shutdown: {DateTime.Now}");
             }
         }
     }

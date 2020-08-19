@@ -47,6 +47,11 @@ namespace SubSonic.Core.VisualStudio.Forms
         //    set => runtimeKind = value;
         //}
 
+        [Category(Package.SubSonicCoreCategory)]
+        [DisplayName("Host Execution Timeout")]
+        [Description("Length of time the host will wait for activity before shutting down, in seconds.")]
+        public int Timeout { get; } = 120;
+
         private bool linePragmas = true;
 
         [Category(Package.SubSonicCoreCategory)]
