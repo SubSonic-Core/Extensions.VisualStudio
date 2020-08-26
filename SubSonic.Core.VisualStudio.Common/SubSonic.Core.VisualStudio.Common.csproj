@@ -9,10 +9,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.7" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.153.0" />
-    <PackageReference Include="Mono.TextTemplating" Version="2.2.0-preview-0171-g166965ae2b" />
     <PackageReference Include="NuGet.Configuration" Version="5.7.0" />
     <PackageReference Include="SubSonic.Core.Extensions" Version="1.1.0" />
-    <PackageReference Include="SubSonic.Core.Remoting" Version="1.0.0-preview-0052-g38edfd749c" />
+    <PackageReference Include="SubSonic.Core.Remoting" Version="1.0.0" />
+    <PackageReference Include="SubSonic.Core.TextTemplating" Version="2.2.0" />
     <PackageReference Include="System.CodeDom" Version="4.7.0" />
     <PackageReference Condition="'$(TargetFramework)'=='netstandard2.0' OR '$(TargetFramework)'=='netcoreapp3.1'" Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
